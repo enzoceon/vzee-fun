@@ -38,40 +38,35 @@ const Header = ({ username }: HeaderProps) => {
             </SheetTrigger>
             <SheetContent side="left" className="bg-darkBlack text-white border-r border-gray-800">
               <SheetHeader>
-                <SheetTitle className="text-premiumRed">Legal Information</SheetTitle>
+                <SheetTitle className="text-premiumRed">Menu</SheetTitle>
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-4">
-                <section>
-                  <h3 className="text-premiumRed font-semibold mb-2">Terms and Conditions</h3>
-                  <p className="text-sm text-lightGray">
-                    By using vzee.fun, you agree to these terms. We provide a platform for sharing audio content.
-                    Users are responsible for the content they upload and share.
-                  </p>
-                </section>
-                
-                <section>
-                  <h3 className="text-premiumRed font-semibold mb-2">Privacy Policy</h3>
-                  <p className="text-sm text-lightGray">
-                    We collect minimal data necessary to provide our services.
-                    Your uploaded audio is stored securely and shared only via the links you create.
-                  </p>
-                </section>
-                
-                <section>
-                  <h3 className="text-premiumRed font-semibold mb-2">Disclaimer</h3>
-                  <p className="text-sm text-lightGray">
-                    vzee.fun is not responsible for user-generated content.
-                    We reserve the right to remove content that violates our policies.
-                  </p>
-                </section>
-                
-                <section>
-                  <h3 className="text-premiumRed font-semibold mb-2">Copyright Policy</h3>
-                  <p className="text-sm text-lightGray">
-                    Do not upload content you don't own rights to.
-                    Report copyright violations to our team.
-                  </p>
-                </section>
+                <nav className="flex flex-col gap-2">
+                  <a 
+                    href="/terms" 
+                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
+                  >
+                    Terms and Conditions
+                  </a>
+                  <a 
+                    href="/privacy" 
+                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
+                  >
+                    Privacy Policy
+                  </a>
+                  <a 
+                    href="/disclaimer" 
+                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
+                  >
+                    Disclaimer
+                  </a>
+                  <a 
+                    href="/copyright" 
+                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
+                  >
+                    Copyright Policy
+                  </a>
+                </nav>
               </div>
             </SheetContent>
           </Sheet>

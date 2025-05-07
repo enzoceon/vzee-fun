@@ -1,7 +1,7 @@
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, User, LogOut } from "lucide-react";
+import { X, User, LogOut, Check } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ProfilePanelProps {
@@ -9,9 +9,13 @@ interface ProfilePanelProps {
   onClose: () => void;
 }
 
-const ProfilePanel = ({ username, onClose, ...props }: ProfilePanelProps) => {
+const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfilePanelProps) => {
   const { toast } = useToast();
   const panelRef = useRef<HTMLDivElement>(null);
+  const [username, setUsername] = useState(initialUsername);
+  const [isChangingUsername, setIsChangingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState(initialUsername);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -36,10 +40,32 @@ const ProfilePanel = ({ username, onClose, ...props }: ProfilePanelProps) => {
     window.location.reload();
   };
   
-  const handleChangeUsername = () => {
-    toast({
-      description: "Username change functionality would be implemented here",
-    });
+  const toggleChangeUsername = () => {
+    setIsChangingUsername(!isChangingUsername);
+    setNewUsername(username);
+  };
+  
+  const saveUsername = () => {
+    if (!newUsername || newUsername.trim() === '') {
+      toast({
+        variant: "destructive",
+        description: "Username cannot be empty",
+      });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    // Simulate API call to check username availability and save
+    setTimeout(() => {
+      setUsername(newUsername);
+      setIsChangingUsername(false);
+      setIsSubmitting(false);
+      
+      toast({
+        description: "Username updated successfully!",
+      });
+    }, 1000);
   };
 
   return (
@@ -67,20 +93,67 @@ const ProfilePanel = ({ username, onClose, ...props }: ProfilePanelProps) => {
           
           <div className="bg-muted bg-opacity-30 rounded-lg p-4 mb-6">
             <label className="text-sm text-muted-foreground">Username</label>
-            <div className="flex items-center gap-2 mt-1">
-              <div className="bg-muted p-2 rounded-md flex-1 text-left">
-                <span className="text-muted-foreground">vzee.fun/</span>
-                <span className="text-lightGray font-medium">{username}</span>
+            
+            {isChangingUsername ? (
+              <div className="mt-2 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="bg-muted p-2 rounded-md flex-1">
+                    <span className="text-muted-foreground">vzee.fun/</span>
+                    <input 
+                      type="text"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      className="bg-transparent border-none outline-none text-lightGray font-medium"
+                      placeholder="username"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={toggleChangeUsername}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm" 
+                    onClick={saveUsername}
+                    className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <span className="flex items-center">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        Saving...
+                      </span>
+                    ) : (
+                      <span className="flex items-center">
+                        <Check className="w-4 h-4 mr-1" /> Save
+                      </span>
+                    )}
+                  </Button>
+                </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleChangeUsername}
-                className="whitespace-nowrap"
-              >
-                Change
-              </Button>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 mt-1">
+                <div className="bg-muted p-2 rounded-md flex-1 text-left">
+                  <span className="text-muted-foreground">vzee.fun/</span>
+                  <span className="text-lightGray font-medium">{username}</span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={toggleChangeUsername}
+                  className="whitespace-nowrap"
+                >
+                  Change
+                </Button>
+              </div>
+            )}
           </div>
           
           <div className="mt-auto">
