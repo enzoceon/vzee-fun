@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import AudioPlayer from "@/components/AudioPlayer";
 import { useEffect, useState } from "react";
@@ -42,22 +43,24 @@ const AudioPage = () => {
           // For re-creating audio URLs that may have been lost between sessions
           let audioURL = foundAudio.audioURL;
           
-          // If the URL is no longer valid (after page refresh, etc.), try to recreate it
-          if (foundAudio.file && (!audioURL || audioURL.startsWith('blob:'))) {
+          // If the URL is no longer valid or doesn't exist, recreate it
+          if (!audioURL || audioURL.startsWith('blob:')) {
             try {
-              // Convert file object back to real File
-              const fileData = foundAudio.file;
-              const file = new File(
-                [new Blob(['audio placeholder'])], // We can't fully recreate the file data from localStorage
-                fileData.name || 'audio.mp3',
-                { type: fileData.type || 'audio/mpeg' }
-              );
-              
-              // Create new URL
-              audioURL = URL.createObjectURL(file);
+              // Convert file object back to a real File
+              if (foundAudio.file) {
+                const fileData = foundAudio.file;
+                const file = new File(
+                  [new Blob(['audio placeholder'])], // We can't fully recreate the file data from localStorage
+                  fileData.name || 'audio.mp3',
+                  { type: fileData.type || 'audio/mpeg' }
+                );
+                
+                // Create new URL
+                audioURL = URL.createObjectURL(file);
+              }
             } catch (error) {
               console.error("Error recreating audio URL:", error);
-              // Keep using the existing URL if recreation fails
+              // If we failed to recreate the file, we'll still try to use any existing URL
             }
           }
           

@@ -105,6 +105,17 @@ const ProfilePage = () => {
     setLoading(false);
   }, [cleanUsername]);
 
+  const handleDeleteAudio = (title: string) => {
+    if (!userProfile?.username) return;
+    
+    // Filter out the deleted audio file
+    const updatedAudioFiles = audioFiles.filter(file => file.title !== title);
+    setAudioFiles(updatedAudioFiles);
+    
+    // Update localStorage
+    localStorage.setItem(`${userProfile.username}_audioFiles`, JSON.stringify(updatedAudioFiles));
+  };
+
   if (loading) {
     return <Loading message="Loading profile..." />;
   }
@@ -178,6 +189,7 @@ const ProfilePage = () => {
                 username={userProfile?.username || ''}
                 audioFile={audio.file}
                 audioURL={audio.audioURL}
+                onDelete={handleDeleteAudio}
               />
             ))}
           </div>

@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Play, Pause, Share2, Trash2 } from "lucide-react";
+import { Copy, Play, Pause, Share2, Trash2, MoreVertical, X } from "lucide-react";
 import AudioWaveform from "./AudioWaveform";
 import { Link } from "react-router-dom";
 import {
@@ -15,6 +15,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface AudioItemProps {
   title: string;
@@ -36,7 +43,6 @@ const AudioItem = ({
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const [showDeleteButton, setShowDeleteButton] = useState(false);
   const longPressTimerRef = useRef<number | null>(null);
   const { toast } = useToast();
   
@@ -59,12 +65,20 @@ const AudioItem = ({
         console.error("Error creating audio URL:", error);
       }
     }
+    
+    // Create audio element to ensure it's ready for playback
+    if (audioURL && !audioElement) {
+      const audio = new Audio(audioURL);
+      audio.addEventListener("ended", () => {
+        setIsPlaying(false);
+      });
+      setAudioElement(audio);
+    }
   }, [audioFile, audioURL, audioElement]);
 
   const handleLongPressStart = () => {
     longPressTimerRef.current = window.setTimeout(() => {
       setIsLongPressing(true);
-      setShowDeleteButton(true);
     }, 800); // 800ms long press to trigger
   };
 
@@ -207,35 +221,44 @@ const AudioItem = ({
         onMouseUp={handleLongPressEnd}
         onMouseLeave={handleLongPressEnd}
       >
-        {/* Share button in the top right corner with text label */}
-        <Button 
-          variant="ghost" 
-          size="sm"
-          className="absolute top-2 right-2 text-premiumRed hover:bg-muted/50 gap-1"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleShare();
-          }}
-        >
-          <Share2 className="h-4 w-4" />
-          Share
-        </Button>
-
-        {/* Delete button that appears after long press */}
-        {showDeleteButton && (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="absolute top-2 left-2 text-white hover:bg-red-700 gap-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              showDeleteConfirm();
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        )}
+        {/* Audio actions dropdown */}
+        <div className="absolute top-2 right-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="hover:bg-muted/50"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52 bg-zinc-900 border-zinc-800 text-white">
+              <DropdownMenuItem 
+                onClick={handleShare}
+                className="flex items-center gap-2 cursor-pointer hover:bg-zinc-800"
+              >
+                <Share2 className="h-4 w-4" />
+                <span>Share</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleCopyLink}
+                className="flex items-center gap-2 cursor-pointer hover:bg-zinc-800"
+              >
+                <Copy className="h-4 w-4" />
+                <span>Copy Link</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="bg-zinc-800" />
+              <DropdownMenuItem 
+                onClick={showDeleteConfirm}
+                className="flex items-center gap-2 cursor-pointer text-premiumRed hover:bg-zinc-800 hover:text-premiumRed"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -266,18 +289,6 @@ const AudioItem = ({
           <Link to={audioLink} className="text-xs text-muted-foreground hover:text-premiumRed transition-colors">
             vzee.fun/{formattedUsername}/{title}
           </Link>
-          <Button 
-            variant="outline"
-            size="sm" 
-            className="text-xs border-premiumRed text-premiumRed hover:bg-premiumRed hover:text-white"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCopyLink();
-            }}
-          >
-            <Copy className="h-3 w-3 mr-1" />
-            Copy Link
-          </Button>
         </div>
       </div>
       
