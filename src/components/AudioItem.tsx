@@ -36,7 +36,6 @@ const AudioItem = ({
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
-  const [showDeleteButton, setShowDeleteButton] = useState(false);
   const longPressTimerRef = useRef<number | null>(null);
   const { toast } = useToast();
   
@@ -64,7 +63,7 @@ const AudioItem = ({
   const handleLongPressStart = () => {
     longPressTimerRef.current = window.setTimeout(() => {
       setIsLongPressing(true);
-      setShowDeleteButton(true);
+      showDeleteConfirm();
     }, 800); // 800ms long press to trigger
   };
 
@@ -142,8 +141,8 @@ const AudioItem = ({
     const link = `${window.location.origin}/${formattedUsername}/${title}`;
     navigator.clipboard.writeText(link).then(() => {
       toast({
-        title: "Link copied",
-        description: "Share link has been copied to clipboard",
+        title: "Copied",
+        description: "Audio link copied to clipboard",
       });
     });
   };
@@ -221,22 +220,6 @@ const AudioItem = ({
           Share
         </Button>
 
-        {/* Delete button that appears after long press */}
-        {showDeleteButton && (
-          <Button
-            variant="destructive"
-            size="sm"
-            className="absolute top-2 left-2 text-white hover:bg-red-700 gap-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              showDeleteConfirm();
-            }}
-          >
-            <Trash2 className="h-4 w-4" />
-            Delete
-          </Button>
-        )}
-
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <Button 
@@ -276,7 +259,7 @@ const AudioItem = ({
             }}
           >
             <Copy className="h-3 w-3 mr-1" />
-            Copy Link
+            Copy
           </Button>
         </div>
       </div>

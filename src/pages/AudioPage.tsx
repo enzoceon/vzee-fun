@@ -30,53 +30,76 @@ const AudioPage = () => {
     // Update the document title
     document.title = title ? `${title} - vzee.fun` : "Audio - vzee.fun";
 
-    // Check if we have locally stored audio
-    const storedAudios = localStorage.getItem(`${username}_audioFiles`);
+    // Check if we have locally stored audio (for all users)
+    let foundAudio = null;
+    let audioUsername = username;
     
-    if (storedAudios) {
+    // First try to find audio directly with the provided username
+    const directStoredAudios = localStorage.getItem(`${username}_audioFiles`);
+    if (directStoredAudios) {
       try {
-        const audioFiles = JSON.parse(storedAudios);
-        const foundAudio = audioFiles.find((audio: any) => audio.title === title);
-        
-        if (foundAudio) {
-          // For re-creating audio URLs that may have been lost between sessions
-          let audioURL = foundAudio.audioURL;
-          
-          // If the URL is no longer valid (after page refresh, etc.), try to recreate it
-          if (foundAudio.file && (!audioURL || audioURL.startsWith('blob:'))) {
-            try {
-              // Convert file object back to real File
-              const fileData = foundAudio.file;
-              const file = new File(
-                [new Blob(['audio placeholder'])], // We can't fully recreate the file data from localStorage
-                fileData.name || 'audio.mp3',
-                { type: fileData.type || 'audio/mpeg' }
-              );
-              
-              // Create new URL
-              audioURL = URL.createObjectURL(file);
-            } catch (error) {
-              console.error("Error recreating audio URL:", error);
-              // Keep using the existing URL if recreation fails
-            }
-          }
-          
-          setExists(true);
-          setAudioData({
-            audioURL: audioURL,
-            title: foundAudio.title,
-            username: username,
-            file: foundAudio.file
-          });
-        } else {
-          setExists(false);
-        }
+        const audioFiles = JSON.parse(directStoredAudios);
+        foundAudio = audioFiles.find((audio: any) => audio.title === title);
       } catch (error) {
         console.error("Error parsing stored audio data:", error);
-        setExists(false);
       }
+    }
+    
+    // If not found, search through all users
+    if (!foundAudio) {
+      // Get list of all usernames from localStorage
+      const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+      
+      // Search through all usernames
+      for (const user of allUsernames) {
+        const storedAudios = localStorage.getItem(`${user}_audioFiles`);
+        if (storedAudios) {
+          try {
+            const audioFiles = JSON.parse(storedAudios);
+            const audio = audioFiles.find((a: any) => a.title === title);
+            if (audio) {
+              foundAudio = audio;
+              audioUsername = user;
+              break;
+            }
+          } catch (error) {
+            console.error("Error parsing stored audio data:", error);
+          }
+        }
+      }
+    }
+    
+    if (foundAudio) {
+      // For re-creating audio URLs that may have been lost between sessions
+      let audioURL = foundAudio.audioURL;
+      
+      // If the URL is no longer valid (after page refresh, etc.), try to recreate it
+      if (foundAudio.file && (!audioURL || audioURL.startsWith('blob:'))) {
+        try {
+          // Convert file object back to real File
+          const fileData = foundAudio.file;
+          const file = new File(
+            [new Blob(['audio placeholder'])], // We can't fully recreate the file data from localStorage
+            fileData.name || 'audio.mp3',
+            { type: fileData.type || 'audio/mpeg' }
+          );
+          
+          // Create new URL
+          audioURL = URL.createObjectURL(file);
+        } catch (error) {
+          console.error("Error recreating audio URL:", error);
+          // Keep using the existing URL if recreation fails
+        }
+      }
+      
+      setExists(true);
+      setAudioData({
+        audioURL: audioURL,
+        title: foundAudio.title,
+        username: audioUsername,
+        file: foundAudio.file
+      });
     } else {
-      // No locally stored audio found
       setExists(false);
     }
     

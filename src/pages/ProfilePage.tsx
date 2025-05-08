@@ -22,8 +22,8 @@ interface UserProfile {
 }
 
 const ProfilePage = () => {
-  const { username } = useParams<{ username: string }>();
-  const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
+  const { username: rawUsername } = useParams<{ username: string }>();
+  const cleanUsername = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);

@@ -50,10 +50,14 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   };
 
   const navigateToProfile = () => {
-    // Ensure the username format is correct for navigation
+    // Format username correctly
     const formattedUsername = username.startsWith('@') ? username : `@${username}`;
-    navigate(`/${formattedUsername}`);
+    // Close the panel first
     onClose();
+    // Navigate after a small delay to ensure panel is closed
+    setTimeout(() => {
+      navigate(`/${formattedUsername}`);
+    }, 100);
   };
   
   const toggleChangeUsername = () => {
