@@ -1,4 +1,5 @@
 
+
 # vzee.fun
 
 A simple web application that lets users upload audio files and share them with a unique link.
@@ -29,9 +30,10 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 1. Go to your Supabase project
 2. Navigate to Authentication > Providers > Google
 3. Enable Google authentication
-4. Enter your Google client ID and secret
-5. Add the necessary redirect URLs (your Vercel domain or localhost for development)
-6. Make sure to configure your Google OAuth consent screen and credentials in Google Cloud Console
+4. Enter your Google client ID (763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com)
+5. Enter your Google client secret from Google Cloud Console
+6. Add the necessary redirect URLs (your Vercel domain or localhost for development)
+7. Make sure to configure your Google OAuth consent screen in Google Cloud Console
 
 ### Troubleshooting Common Issues:
 
@@ -53,3 +55,4 @@ This typically indicates an issue with React context. Ensure:
 4. Verify that your application is using the correct Supabase project URL and anon key
 
 If issues persist, check the browser console for more detailed error messages.
+

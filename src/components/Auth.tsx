@@ -42,7 +42,10 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin
+          redirectTo: window.location.origin,
+          queryParams: {
+            client_id: '763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com'
+          }
         }
       });
       
