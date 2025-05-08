@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { X, Upload, CheckCircle } from "lucide-react";
+import { X, FileAudio, CheckCircle, Share } from "lucide-react";
 
 interface AudioUploadModalProps {
   username: string;
@@ -87,32 +87,36 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     >
       <div 
         ref={modalRef}
-        className="bg-secondary w-full max-w-md rounded-lg shadow-xl animate-slide-up"
+        className="bg-black w-full max-w-md rounded-xl shadow-xl animate-slide-up"
       >
-        <div className="flex justify-between items-center p-4 border-b border-muted">
-          <h2 className="text-xl font-semibold">Upload Audio</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+        <div className="flex justify-between items-center p-5 border-b border-zinc-800">
+          <h2 className="text-2xl font-bold text-white">Upload Audio</h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-zinc-800">
             <X className="w-5 h-5" />
           </Button>
         </div>
         
-        <form onSubmit={handleUpload} className="p-6 space-y-6">
-          <div className="space-y-4">
+        <form onSubmit={handleUpload} className="p-6 space-y-5">
+          <div className="space-y-5">
             {!file ? (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-muted rounded-lg p-8 text-center cursor-pointer hover:border-premiumRed transition-colors"
+                className="border-2 border-dashed border-zinc-700 bg-zinc-900 rounded-xl p-8 text-center cursor-pointer hover:border-premiumRed transition-colors group"
               >
-                <Upload className="w-10 h-10 mx-auto text-muted-foreground mb-2" />
-                <p className="text-muted-foreground mb-1">Click to upload audio file</p>
-                <p className="text-xs text-muted-foreground">MP3, WAV, or OGG (Max 10MB)</p>
+                <div className="w-16 h-16 mx-auto rounded-full bg-zinc-800 flex items-center justify-center mb-3 group-hover:bg-premiumRed/20 transition-colors">
+                  <FileAudio className="w-8 h-8 text-zinc-400 group-hover:text-premiumRed transition-colors" />
+                </div>
+                <p className="text-white text-lg mb-1 font-medium">Click to upload audio</p>
+                <p className="text-sm text-zinc-400">MP3, WAV, or OGG (Max 10MB)</p>
               </div>
             ) : (
-              <div className="bg-muted rounded-lg p-4 flex items-center">
-                <CheckCircle className="w-5 h-5 text-premiumRed mr-3" />
+              <div className="bg-zinc-900 rounded-xl p-5 flex items-center border border-zinc-800">
+                <div className="w-10 h-10 rounded-full bg-premiumRed/20 flex items-center justify-center mr-3">
+                  <CheckCircle className="w-5 h-5 text-premiumRed" />
+                </div>
                 <div className="flex-1 truncate text-left">
-                  <p className="font-medium truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="font-medium truncate text-white">{file.name}</p>
+                  <p className="text-xs text-zinc-400">
                     {(file.size / 1024 / 1024).toFixed(2)}MB
                   </p>
                 </div>
@@ -120,6 +124,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
                   type="button"
                   variant="ghost" 
                   size="icon" 
+                  className="hover:bg-zinc-800"
                   onClick={() => {
                     setFile(null);
                     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -138,8 +143,8 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
               className="hidden" 
             />
             
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-medium">
+            <div className="space-y-2.5">
+              <label htmlFor="title" className="text-sm font-medium text-white">
                 Title
               </label>
               <div className="relative">
@@ -147,8 +152,8 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
                   id="title"
                   value={title}
                   onChange={handleTitleChange}
-                  placeholder="Enter title"
-                  className="input-premium"
+                  placeholder="Enter a unique title for your audio"
+                  className="bg-zinc-900 border-zinc-700 text-white focus-visible:ring-premiumRed"
                   minLength={3}
                   maxLength={30}
                   required
@@ -156,7 +161,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
                 {title.length >= 3 && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     {isChecking ? (
-                      <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+                      <div className="w-4 h-4 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin"></div>
                     ) : titleAvailable ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : titleAvailable === false ? (
@@ -171,18 +176,20 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
               )}
             </div>
             
-            <div className="bg-muted bg-opacity-40 p-3 rounded-md">
-              <p className="text-sm text-center">
-                <span className="text-muted-foreground">Share link: </span>
-                <span className="font-medium">vzee.fun/{username}/{title || "title"}</span>
-              </p>
+            <div className="bg-zinc-900 p-3 rounded-xl border border-zinc-800 mt-2">
+              <div className="flex items-center justify-center gap-2 text-sm">
+                <Share className="w-4 h-4 text-zinc-400" />
+                <p className="text-zinc-400">
+                  {username ? `vzee.fun/${username}/${title || "your-title"}` : "Create your unique share link"}
+                </p>
+              </div>
             </div>
           </div>
           
           <div className="pt-2">
             <Button 
               type="submit" 
-              className="btn-premium w-full"
+              className="w-full bg-gradient-to-r from-premiumRed to-red-700 hover:opacity-90 text-white font-medium py-2.5 rounded-xl transition-all"
               disabled={isUploading || !file || !title || title.length < 3 || titleAvailable === false}
             >
               {isUploading ? (

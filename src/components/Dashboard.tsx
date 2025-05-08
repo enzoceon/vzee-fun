@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Header from "./Header";
 import AudioItem from "./AudioItem";
@@ -29,10 +30,10 @@ const Dashboard = ({ username }: DashboardProps) => {
 
   const renderHomeTab = () => {
     return (
-      <div className="flex flex-col items-center justify-center mt-12">
-        <h2 className="text-3xl font-bold mb-4">Share Your Audio</h2>
-        <p className="text-muted-foreground text-center max-w-md mb-6">
-          Upload your first audio file to get started. Your unique audio page will be instantly shared with the world.
+      <div className="flex flex-col items-center justify-center mt-8">
+        <h2 className="text-2xl font-bold mb-2">Share Your Audio</h2>
+        <p className="text-muted-foreground text-center max-w-sm mb-5 text-sm">
+          Upload your first audio file to get started. Your unique audio page will be instantly shared.
         </p>
         <Button
           className="bg-premiumRed hover:bg-premiumRed/90 text-white rounded-full px-6 flex items-center gap-2"
