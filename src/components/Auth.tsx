@@ -83,7 +83,7 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
           
           <Button
             onClick={handleGoogleLogin}
-            className="btn-premium flex items-center gap-2 min-w-[220px] justify-center"
+            className="flex items-center gap-2 min-w-[220px] justify-center bg-white text-black hover:bg-gray-200"
           >
             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" className="w-5 h-5">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
