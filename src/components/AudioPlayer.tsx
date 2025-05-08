@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import AudioWaveform from "./AudioWaveform";
 import { Button } from "@/components/ui/button";
@@ -19,7 +18,6 @@ const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   
-  // Helper function for time formatting
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
