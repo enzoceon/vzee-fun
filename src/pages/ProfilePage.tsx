@@ -6,7 +6,6 @@ import { HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AudioItem from "@/components/AudioItem";
 import Loading from "@/components/Loading";
-import { getEmailUsernameMap } from "@/lib/googleAuth";
 
 interface AudioFile {
   title: string;

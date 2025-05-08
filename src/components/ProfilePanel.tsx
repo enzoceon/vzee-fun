@@ -50,7 +50,9 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   };
 
   const navigateToProfile = () => {
-    navigate(`/@${username}`);
+    // Ensure the username format is correct for navigation
+    const formattedUsername = username.startsWith('@') ? username : `@${username}`;
+    navigate(`/${formattedUsername}`);
     onClose();
   };
   

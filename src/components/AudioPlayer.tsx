@@ -8,9 +8,10 @@ interface AudioPlayerProps {
   audioURL: string;
   title: string;
   username: string;
+  audioFile?: File;
 }
 
-const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
+const AudioPlayer = ({ audioURL, title, username, audioFile }: AudioPlayerProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -36,6 +37,7 @@ const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('ended', handleEnded);
+    audio.addEventListener('error', handleAudioError);
     
     // Autoplay the audio
     audio.play().then(() => {
@@ -51,8 +53,29 @@ const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
+      audio.removeEventListener('error', handleAudioError);
     };
   }, [audioURL, title, username]);
+  
+  const handleAudioError = (e: Event) => {
+    console.error("Audio playback error:", e);
+    
+    // If we have the file object and the URL is broken, try to recreate it
+    if (audioFile && audioRef.current) {
+      try {
+        const newUrl = URL.createObjectURL(audioFile);
+        audioRef.current.src = newUrl;
+        audioRef.current.load();
+        audioRef.current.play().then(() => {
+          setIsPlaying(true);
+        }).catch(err => {
+          console.error("Failed to play with recreated URL:", err);
+        });
+      } catch (fileErr) {
+        console.error("Failed to recreate audio URL from file:", fileErr);
+      }
+    }
+  };
   
   const handleTimeUpdate = () => {
     if (audioRef.current) {

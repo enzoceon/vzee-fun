@@ -36,6 +36,7 @@ const AudioItem = ({
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isLongPressing, setIsLongPressing] = useState(false);
+  const [showDeleteButton, setShowDeleteButton] = useState(false);
   const longPressTimerRef = useRef<number | null>(null);
   const { toast } = useToast();
   
@@ -48,10 +49,22 @@ const AudioItem = ({
     };
   }, []);
 
+  useEffect(() => {
+    // Create URL from file if not provided or if URL is broken
+    if (!audioURL || (audioElement && audioElement.error)) {
+      try {
+        const url = URL.createObjectURL(audioFile);
+        setAudioURL(url);
+      } catch (error) {
+        console.error("Error creating audio URL:", error);
+      }
+    }
+  }, [audioFile, audioURL, audioElement]);
+
   const handleLongPressStart = () => {
     longPressTimerRef.current = window.setTimeout(() => {
       setIsLongPressing(true);
-      setShowDeleteDialog(true);
+      setShowDeleteButton(true);
     }, 800); // 800ms long press to trigger
   };
 
@@ -81,7 +94,22 @@ const AudioItem = ({
         if (isPlaying) {
           audioElement.pause();
         } else {
-          audioElement.play();
+          audioElement.play().catch(err => {
+            console.error("Error playing audio:", err);
+            // Try recreating the audio URL
+            const newUrl = URL.createObjectURL(audioFile);
+            const newAudio = new Audio(newUrl);
+            newAudio.addEventListener("ended", () => {
+              setIsPlaying(false);
+            });
+            setAudioURL(newUrl);
+            setAudioElement(newAudio);
+            newAudio.play().then(() => {
+              setIsPlaying(true);
+            }).catch(err2 => {
+              console.error("Failed to play with recreated URL:", err2);
+            });
+          });
         }
         setIsPlaying(!isPlaying);
       } else {
@@ -90,15 +118,28 @@ const AudioItem = ({
         audio.addEventListener("ended", () => {
           setIsPlaying(false);
         });
+        audio.addEventListener("error", () => {
+          // Handle audio error by recreating URL
+          const newUrl = URL.createObjectURL(audioFile);
+          audio.src = newUrl;
+          setAudioURL(newUrl);
+          audio.load();
+          audio.play().catch(err => console.error("Error playing recreated audio:", err));
+        });
         setAudioElement(audio);
-        audio.play();
-        setIsPlaying(true);
+        audio.play().then(() => {
+          setIsPlaying(true);
+        }).catch(err => {
+          console.error("Error playing audio:", err);
+        });
       }
     }
   };
   
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/@${username}/${title}`;
+    // Make sure username has the @ prefix for the URL
+    const formattedUsername = username.startsWith('@') ? username : `@${username}`;
+    const link = `${window.location.origin}/${formattedUsername}/${title}`;
     navigator.clipboard.writeText(link).then(() => {
       toast({
         title: "Link copied",
@@ -108,7 +149,9 @@ const AudioItem = ({
   };
 
   const handleShare = () => {
-    const shareUrl = `${window.location.origin}/@${username}/${title}`;
+    // Make sure username has the @ prefix for the URL
+    const formattedUsername = username.startsWith('@') ? username : `@${username}`;
+    const shareUrl = `${window.location.origin}/${formattedUsername}/${title}`;
     
     if (navigator.share) {
       navigator.share({
@@ -145,7 +188,13 @@ const AudioItem = ({
     }
   };
 
-  const audioLink = `/@${username}/${title}`;
+  const showDeleteConfirm = () => {
+    setShowDeleteDialog(true);
+  };
+
+  // Make sure username has the @ prefix for the link
+  const formattedUsername = username.startsWith('@') ? username : `@${username}`;
+  const audioLink = `/${formattedUsername}/${title}`;
 
   return (
     <>
@@ -171,6 +220,22 @@ const AudioItem = ({
           <Share2 className="h-4 w-4" />
           Share
         </Button>
+
+        {/* Delete button that appears after long press */}
+        {showDeleteButton && (
+          <Button
+            variant="destructive"
+            size="sm"
+            className="absolute top-2 left-2 text-white hover:bg-red-700 gap-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              showDeleteConfirm();
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </Button>
+        )}
 
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
@@ -199,7 +264,7 @@ const AudioItem = ({
         
         <div className="flex justify-between items-center mt-3">
           <Link to={audioLink} className="text-xs text-muted-foreground hover:text-premiumRed transition-colors">
-            vzee.fun/@{username}/{title}
+            vzee.fun/{formattedUsername}/{title}
           </Link>
           <Button 
             variant="outline"

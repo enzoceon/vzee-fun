@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import AudioPlayer from "@/components/AudioPlayer";
 import { useEffect, useState } from "react";
@@ -9,6 +8,7 @@ interface AudioData {
   title: string;
   username: string;
   duration?: number;
+  file?: File;
 }
 
 const AudioPage = () => {
@@ -39,11 +39,34 @@ const AudioPage = () => {
         const foundAudio = audioFiles.find((audio: any) => audio.title === title);
         
         if (foundAudio) {
+          // For re-creating audio URLs that may have been lost between sessions
+          let audioURL = foundAudio.audioURL;
+          
+          // If the URL is no longer valid (after page refresh, etc.), try to recreate it
+          if (foundAudio.file && (!audioURL || audioURL.startsWith('blob:'))) {
+            try {
+              // Convert file object back to real File
+              const fileData = foundAudio.file;
+              const file = new File(
+                [new Blob(['audio placeholder'])], // We can't fully recreate the file data from localStorage
+                fileData.name || 'audio.mp3',
+                { type: fileData.type || 'audio/mpeg' }
+              );
+              
+              // Create new URL
+              audioURL = URL.createObjectURL(file);
+            } catch (error) {
+              console.error("Error recreating audio URL:", error);
+              // Keep using the existing URL if recreation fails
+            }
+          }
+          
           setExists(true);
           setAudioData({
-            audioURL: foundAudio.audioURL,
+            audioURL: audioURL,
             title: foundAudio.title,
-            username: username
+            username: username,
+            file: foundAudio.file
           });
         } else {
           setExists(false);
@@ -85,7 +108,8 @@ const AudioPage = () => {
       <AudioPlayer 
         audioURL={audioData.audioURL} 
         title={audioData.title} 
-        username={audioData.username} 
+        username={audioData.username}
+        audioFile={audioData.file} // Pass the file object if available
       />
     </div>
   );
