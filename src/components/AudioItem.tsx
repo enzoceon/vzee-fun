@@ -81,14 +81,15 @@ const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
 
   return (
     <div className="premium-card relative">
-      {/* Share button in the top right corner (green area in the mockup) */}
+      {/* Share button in the top right corner with text label */}
       <Button 
         variant="ghost" 
-        size="icon"
-        className="absolute top-2 right-2 h-8 w-8 text-premiumRed hover:bg-muted/50"
+        size="sm"
+        className="absolute top-2 right-2 text-premiumRed hover:bg-muted/50 gap-1"
         onClick={handleShare}
       >
         <Share2 className="h-4 w-4" />
+        Share
       </Button>
 
       <div className="flex justify-between items-center mb-3">
