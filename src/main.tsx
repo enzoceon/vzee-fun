@@ -1,8 +1,7 @@
 
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
 
 // Add meta tags for viewport settings
 const meta = document.createElement('meta');
@@ -22,11 +21,4 @@ style.innerHTML = `
 `;
 document.getElementsByTagName('head')[0].appendChild(style);
 
-// Use createRoot with React import
-const container = document.getElementById('root');
-if (container) {
-  const root = createRoot(container);
-  root.render(<App />);
-} else {
-  console.error('Root element not found');
-}
+createRoot(document.getElementById("root")!).render(<App />);
