@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -79,7 +78,8 @@ const AudioItem = ({
   const handleLongPressStart = () => {
     longPressTimerRef.current = window.setTimeout(() => {
       setIsLongPressing(true);
-    }, 800); // 800ms long press to trigger
+      setShowDeleteDialog(true);
+    }, 800); // 800ms long press to trigger delete dialog
   };
 
   const handleLongPressEnd = () => {
@@ -221,45 +221,6 @@ const AudioItem = ({
         onMouseUp={handleLongPressEnd}
         onMouseLeave={handleLongPressEnd}
       >
-        {/* Audio actions dropdown */}
-        <div className="absolute top-2 right-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm"
-                className="hover:bg-muted/50"
-              >
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52 bg-zinc-900 border-zinc-800 text-white">
-              <DropdownMenuItem 
-                onClick={handleShare}
-                className="flex items-center gap-2 cursor-pointer hover:bg-zinc-800"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Share</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={handleCopyLink}
-                className="flex items-center gap-2 cursor-pointer hover:bg-zinc-800"
-              >
-                <Copy className="h-4 w-4" />
-                <span>Copy Link</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-zinc-800" />
-              <DropdownMenuItem 
-                onClick={showDeleteConfirm}
-                className="flex items-center gap-2 cursor-pointer text-premiumRed hover:bg-zinc-800 hover:text-premiumRed"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>Delete</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2">
             <Button 
@@ -281,6 +242,31 @@ const AudioItem = ({
               {title}
             </Link>
           </div>
+
+          <div className="flex gap-1">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-muted-foreground hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleShare();
+              }}
+            >
+              <Share2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-muted-foreground hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopyLink();
+              }}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         <AudioWaveform isPlaying={isPlaying} className="my-3" />
@@ -293,7 +279,7 @@ const AudioItem = ({
       </div>
       
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-zinc-900 border-zinc-800 text-white">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Audio</AlertDialogTitle>
             <AlertDialogDescription>
@@ -301,7 +287,7 @@ const AudioItem = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-zinc-800 text-white hover:bg-zinc-700">Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-premiumRed text-white hover:bg-premiumRed/90">
               <Trash2 className="h-4 w-4 mr-2" />
               Delete

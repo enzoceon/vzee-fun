@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { User } from "lucide-react";
 import { HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,8 +22,9 @@ interface UserProfile {
 }
 
 const ProfilePage = () => {
-  const { username } = useParams<{ username: string }>();
-  const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
+  const { username: urlUsername } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  let cleanUsername = urlUsername?.startsWith('@') ? urlUsername.substring(1) : urlUsername;
   
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
