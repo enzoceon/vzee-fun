@@ -1,13 +1,16 @@
 
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import AudioPlayer from "@/components/AudioPlayer";
 import { useEffect, useState } from "react";
 import Loading from "@/components/Loading";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 const AudioPage = () => {
   const { username, title } = useParams<{ username: string; title: string }>();
   const [isLoading, setIsLoading] = useState(true);
   const [exists, setExists] = useState(true);
+  const navigate = useNavigate();
   
   useEffect(() => {
     // Simulate checking if the audio exists
@@ -18,6 +21,10 @@ const AudioPage = () => {
       setIsLoading(false);
     }, 1000);
   }, [username, title]);
+  
+  const handleBack = () => {
+    navigate(-1);
+  };
   
   if (isLoading) {
     return <Loading message="Loading audio..." />;
@@ -30,17 +37,31 @@ const AudioPage = () => {
         <p className="text-lightGray mb-8">
           The audio you're looking for doesn't exist or has been removed.
         </p>
-        <a 
-          href="/" 
+        <Button 
+          onClick={handleBack}
           className="bg-premiumRed text-white px-6 py-3 rounded-md hover:bg-opacity-90 transition-all duration-200"
         >
-          Go to vzee.fun
-        </a>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Go Back
+        </Button>
       </div>
     );
   }
   
-  return <AudioPlayer />;
+  return (
+    <div className="relative">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-4 left-4 z-10 text-white bg-black/30 hover:bg-black/50"
+        onClick={handleBack}
+      >
+        <ArrowLeft className="mr-1 h-4 w-4" />
+        Back
+      </Button>
+      <AudioPlayer />
+    </div>
+  );
 };
 
 export default AudioPage;

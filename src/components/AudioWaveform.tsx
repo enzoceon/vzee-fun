@@ -24,7 +24,7 @@ const AudioWaveform = ({
     
     bars.forEach((bar, index) => {
       // Set animation delay to create wave effect
-      bar.style.setProperty("--delay", `${index * 0.05}`);
+      bar.style.setProperty("--delay", `${index * 0.05}s`);
       
       // Set animation state based on isPlaying
       if (isPlaying) {
@@ -38,16 +38,18 @@ const AudioWaveform = ({
   return (
     <div 
       ref={containerRef}
-      className={`flex items-center justify-center h-8 ${className}`}
+      className={`flex items-center justify-center gap-1 ${className}`}
     >
       {Array.from({ length: barCount }).map((_, index) => (
         <div
           key={index}
-          className="waveform-bar"
+          className="waveform-bar animate-waveform"
           style={{
             backgroundColor: color,
             height: `${Math.random() * 15 + 5}px`,
             width: "3px",
+            animationDelay: `calc(${index * 0.05}s)`,
+            animationPlayState: isPlaying ? "running" : "paused"
           }}
         />
       ))}

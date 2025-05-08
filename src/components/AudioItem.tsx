@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Play, Pause, Share2 } from "lucide-react";
 import AudioWaveform from "./AudioWaveform";
+import { Link } from "react-router-dom";
 
 interface AudioItemProps {
   title: string;
@@ -79,6 +80,8 @@ const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
     }
   };
 
+  const audioLink = `/${username}/${title}`;
+
   return (
     <div className="premium-card relative">
       {/* Share button in the top right corner with text label */}
@@ -106,16 +109,18 @@ const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
               <Play className="h-4 w-4" />
             )}
           </Button>
-          <h3 className="font-medium">{title}</h3>
+          <Link to={audioLink} className="font-medium hover:text-premiumRed transition-colors">
+            {title}
+          </Link>
         </div>
       </div>
       
       <AudioWaveform isPlaying={isPlaying} className="my-3" />
       
       <div className="flex justify-between items-center mt-3">
-        <span className="text-xs text-muted-foreground">
+        <Link to={audioLink} className="text-xs text-muted-foreground hover:text-premiumRed transition-colors">
           vzee.fun/{username}/{title}
-        </span>
+        </Link>
         <Button 
           variant="outline"
           size="sm" 

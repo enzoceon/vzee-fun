@@ -30,10 +30,10 @@ const Dashboard = ({ username }: DashboardProps) => {
 
   const renderHomeTab = () => {
     return (
-      <div className="flex flex-col items-center justify-center mt-8">
-        <h2 className="text-2xl font-bold mb-2">Share Your Audio</h2>
-        <p className="text-muted-foreground text-center max-w-sm mb-5 text-sm">
-          Upload your first audio file to get started. Your unique audio page will be instantly shared.
+      <div className="flex flex-col items-center justify-center mt-6">
+        <h2 className="text-xl font-bold mb-1.5">Share Your Audio</h2>
+        <p className="text-muted-foreground text-center max-w-xs mb-4 text-sm">
+          Upload your audio file to get started. Your unique audio page will be instantly shared.
         </p>
         <Button
           className="bg-premiumRed hover:bg-premiumRed/90 text-white rounded-full px-6 flex items-center gap-2"

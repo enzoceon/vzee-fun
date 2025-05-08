@@ -152,7 +152,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
                   id="title"
                   value={title}
                   onChange={handleTitleChange}
-                  placeholder="Enter a unique title for your audio"
+                  placeholder=""
                   className="bg-zinc-900 border-zinc-700 text-white focus-visible:ring-premiumRed"
                   minLength={3}
                   maxLength={30}
@@ -180,7 +180,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
               <div className="flex items-center justify-center gap-2 text-sm">
                 <Share className="w-4 h-4 text-zinc-400" />
                 <p className="text-zinc-400">
-                  {username ? `vzee.fun/${username}/${title || "your-title"}` : "Create your unique share link"}
+                  {username ? `vzee.fun/${username}/${title || ""}` : "Create your unique share link"}
                 </p>
               </div>
             </div>
