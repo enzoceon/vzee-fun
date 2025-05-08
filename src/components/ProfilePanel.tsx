@@ -1,7 +1,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, User, LogOut, Check, HeartHandshake } from "lucide-react";
+import { X, User, LogOut, Check, HeartHandshake, UserCheck, AlertTriangle, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut, getCurrentUser } from "@/lib/googleAuth";
 import { useNavigate } from "react-router-dom";
@@ -20,6 +20,8 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   const [newUsername, setNewUsername] = useState(initialUsername);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
+  const [isChecking, setIsChecking] = useState(false);
   
   const user = getCurrentUser();
   const displayName = user?.name || "User";
@@ -39,6 +41,23 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     };
   }, [onClose]);
   
+  useEffect(() => {
+    if (isChangingUsername && newUsername !== username && newUsername.length >= 3) {
+      const checkTimeout = setTimeout(() => {
+        setIsChecking(true);
+        // Check against all usernames in localStorage
+        setTimeout(() => {
+          const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+          const isTaken = allUsernames.includes(newUsername) && newUsername !== username;
+          setIsAvailable(!isTaken);
+          setIsChecking(false);
+        }, 600);
+      }, 300);
+      
+      return () => clearTimeout(checkTimeout);
+    }
+  }, [newUsername, username, isChangingUsername]);
+  
   const handleSignOut = () => {
     signOut();
     toast({
@@ -50,7 +69,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   };
 
   const navigateToProfile = () => {
-    // Format username correctly
+    // Format username correctly for the URL
     const formattedUsername = username.startsWith('@') ? username : `@${username}`;
     // Close the panel first
     onClose();
@@ -64,6 +83,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setIsChangingUsername(!isChangingUsername);
     setNewUsername(username);
     setError(null);
+    setIsAvailable(null);
   };
   
   const validateUsername = (value: string) => {
@@ -89,7 +109,8 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewUsername(value);
-    setError(validateUsername(value));
+    const validationError = validateUsername(value);
+    setError(validationError);
   };
   
   const saveUsername = () => {
@@ -102,11 +123,11 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setIsSubmitting(true);
     setError(null);
     
-    // First check if username is taken globally
+    // First check if username is taken globally (but not by this user)
     const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
-    const isTakenGlobally = allUsernames.includes(newUsername);
+    const isTakenGlobally = allUsernames.includes(newUsername) && newUsername !== username;
     
-    if (isTakenGlobally && newUsername !== username) {
+    if (isTakenGlobally) {
       setError("This username is already taken");
       setIsSubmitting(false);
       return;
@@ -144,7 +165,8 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setIsSubmitting(false);
     
     toast({
-      description: "Username updated successfully!",
+      title: "Username updated",
+      description: "Your username has been updated successfully!",
     });
   };
 
@@ -179,10 +201,11 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
             <span className="text-sm text-muted-foreground">{email}</span>
             
             <Button 
-              variant="ghost" 
-              className="mt-4 text-sm text-premiumRed hover:bg-premiumRed/10"
+              variant="outline" 
+              className="mt-4 text-sm border-premiumRed text-premiumRed hover:bg-premiumRed hover:text-white"
               onClick={navigateToProfile}
             >
+              <UserCheck className="w-4 h-4 mr-2" />
               View Public Profile
             </Button>
           </div>
@@ -193,21 +216,40 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
             {isChangingUsername ? (
               <div className="mt-2 space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="bg-muted p-2 rounded-md flex-1">
+                  <div className="bg-muted p-2 rounded-md flex-1 relative">
                     <span className="text-muted-foreground">@</span>
                     <input 
                       type="text"
                       value={newUsername}
                       onChange={handleUsernameChange}
-                      className="bg-transparent border-none outline-none text-lightGray font-medium"
+                      className="bg-transparent border-none outline-none text-lightGray font-medium w-[85%]"
                       placeholder="username"
                       autoFocus
                     />
+                    {newUsername.length >= 3 && (
+                      <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                        {isChecking ? (
+                          <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                        ) : isAvailable ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : isAvailable === false ? (
+                          <AlertTriangle className="h-4 w-4 text-premiumRed" />
+                        ) : null}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
                 {error && (
                   <p className="text-sm text-premiumRed">{error}</p>
+                )}
+                
+                {newUsername.length >= 3 && isAvailable === false && !error && (
+                  <p className="text-sm text-premiumRed">This username is already taken</p>
+                )}
+                
+                {newUsername.length >= 3 && isAvailable && !error && (
+                  <p className="text-sm text-green-500">This username is available</p>
                 )}
                 
                 <div className="flex gap-2">
@@ -224,11 +266,11 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                     size="sm" 
                     onClick={saveUsername}
                     className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
-                    disabled={isSubmitting || !!error}
+                    disabled={isSubmitting || !!error || isAvailable === false || isChecking}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                         Saving...
                       </span>
                     ) : (

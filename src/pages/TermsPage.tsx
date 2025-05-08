@@ -23,43 +23,51 @@ export default function TermsPage() {
         <section>
           <h2 className="text-xl font-semibold mb-4 text-white">1. Acceptance of Terms</h2>
           <p>
-            By using vzee.fun, you agree to be bound by these Terms and Conditions. 
-            If you do not agree to these terms, please do not use our service.
+            By accessing or using vzee.fun, you agree to be bound by these Terms and Conditions.
+            If you do not agree to all the terms and conditions, you must not access or use our services.
           </p>
         </section>
         
         <section>
-          <h2 className="text-xl font-semibold mb-4 text-white">2. Use License</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">2. User Accounts</h2>
           <p>
-            vzee.fun grants you a personal, non-exclusive, non-transferable license to use 
-            the service for personal and non-commercial purposes in accordance with these Terms.
+            When you create an account with us, you must provide accurate and complete information.
+            You are responsible for maintaining the security of your account and for all activities
+            that occur under your account.
           </p>
         </section>
         
         <section>
-          <h2 className="text-xl font-semibold mb-4 text-white">3. User Obligations</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">3. User Content</h2>
           <p>
-            Users are responsible for all content they upload to vzee.fun. You may not upload content 
-            that is illegal, harmful, threatening, abusive, harassing, defamatory, or otherwise 
-            objectionable.
+            You retain ownership of the content you upload to vzee.fun. By uploading content, you grant
+            us a non-exclusive, worldwide, royalty-free license to use, reproduce, and distribute your
+            content in connection with our services.
+          </p>
+          <p className="mt-2">
+            You are solely responsible for the content you upload. Content that violates any applicable
+            laws or regulations is strictly prohibited.
           </p>
         </section>
         
         <section>
-          <h2 className="text-xl font-semibold mb-4 text-white">4. Service Modifications</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">4. Prohibited Activities</h2>
           <p>
-            vzee.fun reserves the right to modify or discontinue the service at any time, 
-            with or without notice. We shall not be liable to you or any third party for any 
-            modification, suspension, or discontinuation of the service.
+            You agree not to:
           </p>
+          <ul className="list-disc pl-6 space-y-2 mt-2">
+            <li>Use our services in any way that violates any applicable laws</li>
+            <li>Impersonate any person or entity</li>
+            <li>Upload harmful or malicious code</li>
+            <li>Attempt to gain unauthorized access to our services</li>
+            <li>Use our services to distribute unsolicited promotional content</li>
+          </ul>
         </section>
         
         <section>
-          <h2 className="text-xl font-semibold mb-4 text-white">5. Limitation of Liability</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">5. Contact Us</h2>
           <p>
-            In no event shall vzee.fun be liable for any indirect, incidental, special, 
-            consequential or punitive damages, including without limitation, loss of profits, 
-            data, or use, arising out of or in connection with these Terms or the service.
+            If you have any questions about these Terms, please <a href="/contact" className="text-premiumRed hover:underline">contact us</a>.
           </p>
         </section>
       </div>

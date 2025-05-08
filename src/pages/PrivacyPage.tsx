@@ -23,40 +23,45 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold mb-4 text-white">1. Information We Collect</h2>
           <p>
-            When you use vzee.fun, we collect information that you provide directly to us, 
-            such as your name, email address, and any audio content you upload.
+            We collect information you provide directly to us when you register for an account,
+            create or share content, and communicate with other users. This includes your username,
+            email address, profile information, and any audio files you upload.
           </p>
         </section>
         
         <section>
           <h2 className="text-xl font-semibold mb-4 text-white">2. How We Use Your Information</h2>
           <p>
-            We use the information we collect to provide, maintain, and improve our services, 
-            to process transactions, to send you related information, and to respond to your comments and questions.
+            We use the information we collect to provide, maintain, and improve our services,
+            develop new features, and protect vzee.fun and our users.
           </p>
         </section>
         
         <section>
-          <h2 className="text-xl font-semibold mb-4 text-white">3. Information Sharing</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">3. Sharing Your Information</h2>
           <p>
-            We do not share your personal information with third parties except as described in this 
-            privacy policy. We may share information with third-party vendors who provide services on our behalf.
+            We do not share your personal information with companies, organizations, or individuals
+            outside of vzee.fun except in the following cases:
           </p>
+          <ul className="list-disc pl-6 space-y-2 mt-2">
+            <li>With your consent</li>
+            <li>For legal reasons</li>
+            <li>To protect the rights, property or safety of vzee.fun, our users or the public</li>
+          </ul>
         </section>
         
         <section>
           <h2 className="text-xl font-semibold mb-4 text-white">4. Data Security</h2>
           <p>
-            vzee.fun takes reasonable measures to help protect your personal information from loss, 
-            theft, misuse, and unauthorized access, disclosure, alteration, and destruction.
+            We work hard to protect our users from unauthorized access to or unauthorized alteration,
+            disclosure or destruction of information we hold.
           </p>
         </section>
         
         <section>
-          <h2 className="text-xl font-semibold mb-4 text-white">5. Changes to Privacy Policy</h2>
+          <h2 className="text-xl font-semibold mb-4 text-white">5. Contact Us</h2>
           <p>
-            We may update this privacy policy from time to time. If we make significant changes, 
-            we will notify you by email or by posting a notice on our website.
+            If you have any questions about our Privacy Policy, please <a href="/contact" className="text-premiumRed hover:underline">contact us</a>.
           </p>
         </section>
       </div>

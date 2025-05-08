@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, User, X, ChevronDown, ChevronRight } from "lucide-react";
+import { Menu, User, X, ChevronDown, ChevronRight, Mail, FileText, ShieldCheck, Cookie } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProfilePanel from "./ProfilePanel";
 import {
@@ -16,7 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 interface HeaderProps {
   username: string;
@@ -57,16 +57,19 @@ const Header = ({ username }: HeaderProps) => {
                     className="w-full"
                   >
                     <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50">
-                      <span>Support</span>
+                      <span className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2" />
+                        Support
+                      </span>
                       {supportOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-4">
-                      <a 
-                        href="/contact" 
+                      <Link 
+                        to="/contact" 
                         className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
                       >
                         Contact Us
-                      </a>
+                      </Link>
                       <a 
                         href="https://www.paypal.me/enzoceon" 
                         target="_blank" 
@@ -85,34 +88,37 @@ const Header = ({ username }: HeaderProps) => {
                     className="w-full"
                   >
                     <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50">
-                      <span>Legal</span>
+                      <span className="flex items-center">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Legal
+                      </span>
                       {legalOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </CollapsibleTrigger>
                     <CollapsibleContent className="pl-4">
-                      <a 
-                        href="/terms" 
+                      <Link 
+                        to="/terms" 
                         className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
                       >
                         Terms and Conditions
-                      </a>
-                      <a 
-                        href="/privacy" 
+                      </Link>
+                      <Link 
+                        to="/privacy" 
                         className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
                       >
                         Privacy Policy
-                      </a>
-                      <a 
-                        href="/disclaimer" 
+                      </Link>
+                      <Link 
+                        to="/disclaimer" 
                         className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
                       >
                         Disclaimer
-                      </a>
-                      <a 
-                        href="/cookie-policy" 
+                      </Link>
+                      <Link 
+                        to="/cookie-policy" 
                         className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
                       >
                         Cookie Policy
-                      </a>
+                      </Link>
                     </CollapsibleContent>
                   </Collapsible>
                 </nav>
@@ -121,9 +127,9 @@ const Header = ({ username }: HeaderProps) => {
           </Sheet>
           
           <h1 className="text-premiumRed font-bold text-xl">
-            <a href="/" className="hover:opacity-90 transition-opacity">
+            <Link to="/" className="hover:opacity-90 transition-opacity">
               vzee.fun
-            </a>
+            </Link>
           </h1>
           
           <Button 

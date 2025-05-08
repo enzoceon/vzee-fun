@@ -1,11 +1,11 @@
 
-import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { User } from "lucide-react";
-import { HeartHandshake } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, User } from "lucide-react";
 import AudioItem from "@/components/AudioItem";
 import Loading from "@/components/Loading";
+import { getEmailUsernameMap } from "@/lib/googleAuth";
 
 interface AudioFile {
   title: string;
@@ -14,181 +14,162 @@ interface AudioFile {
   createdAt: number;
 }
 
-interface UserProfile {
-  username: string;
-  name?: string;
-  picture?: string;
-  email?: string;
-}
-
-const ProfilePage = () => {
+export default function ProfilePage() {
   const { username: rawUsername } = useParams<{ username: string }>();
-  const cleanUsername = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
+  // Clean up username parameter (remove @ if present)
+  const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
-  const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userExists, setUserExists] = useState(false);
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
-  const [notFound, setNotFound] = useState(false);
+  const [profilePic, setProfilePic] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!cleanUsername) {
-      setNotFound(true);
-      setLoading(false);
-      return;
-    }
-    
-    // Update document title
-    document.title = `@${cleanUsername} - vzee.fun`;
-
-    // Try to find this user in local storage
-    const usernameMap = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
-    const emailsToUsernames = Object.entries(usernameMap);
-    
-    let foundEmail = '';
-    let foundUsername = '';
-    
-    for (const [email, uname] of emailsToUsernames) {
-      if (uname === cleanUsername) {
-        foundEmail = email;
-        foundUsername = uname as string;
-        break;
-      }
-    }
-    
-    if (!foundUsername) {
-      // Check the global username list as a fallback
-      const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
-      if (allUsernames.includes(cleanUsername)) {
-        foundUsername = cleanUsername;
-      } else {
-        setNotFound(true);
-        setLoading(false);
+    const loadUserProfile = async () => {
+      setIsLoading(true);
+      
+      if (!username) {
+        setUserExists(false);
+        setIsLoading(false);
         return;
       }
-    }
-    
-    // Set up profile information
-    setUserProfile({
-      username: foundUsername
-    });
-    
-    // Look for any stored user data that matches this email
-    const allUsers = localStorage.getItem('vzeeAllUsers');
-    if (allUsers && foundEmail) {
+      
+      // Update the document title
+      document.title = `@${username} - vzee.fun`;
+      
+      // Check if this username exists in our system
+      const usernameMappings = getEmailUsernameMap();
+      const allUsernames = Object.values(usernameMappings);
+      const usernameExists = allUsernames.includes(username);
+      
+      if (!usernameExists) {
+        // Also check in the global usernames list
+        const globalUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+        if (!globalUsernames.includes(username)) {
+          setUserExists(false);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
+      setUserExists(true);
+      
+      // Get user's email from the username
+      const userEmail = Object.keys(usernameMappings).find(
+        email => usernameMappings[email] === username
+      );
+      
+      // Get user profile information if available
+      if (userEmail) {
+        const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
+        if (allUsers[userEmail]) {
+          setDisplayName(allUsers[userEmail].name || username);
+          setProfilePic(allUsers[userEmail].picture || null);
+        }
+      }
+      
+      // Load audio files for this user
       try {
-        const users = JSON.parse(allUsers);
-        const foundUser = users[foundEmail];
-        if (foundUser) {
-          setUserProfile(prev => ({
-            ...prev!,
-            name: foundUser.name,
-            picture: foundUser.picture,
-            email: foundEmail
-          }));
+        const storedAudioFiles = localStorage.getItem(`${username}_audioFiles`);
+        if (storedAudioFiles) {
+          const parsedFiles = JSON.parse(storedAudioFiles);
+          setAudioFiles(parsedFiles);
         }
       } catch (error) {
-        console.error('Error parsing user data:', error);
+        console.error("Error loading audio files:", error);
       }
-    }
-
-    // Load audio files for this user
-    const savedAudioFiles = localStorage.getItem(`${foundUsername}_audioFiles`);
-    if (savedAudioFiles) {
-      try {
-        const parsedFiles = JSON.parse(savedAudioFiles);
-        setAudioFiles(parsedFiles);
-      } catch (error) {
-        console.error('Error parsing audio files:', error);
-      }
-    }
+      
+      setIsLoading(false);
+    };
     
-    setLoading(false);
-  }, [cleanUsername]);
-
-  if (loading) {
+    loadUserProfile();
+  }, [username]);
+  
+  if (isLoading) {
     return <Loading message="Loading profile..." />;
   }
   
-  if (notFound) {
+  if (!userExists) {
     return (
-      <div className="min-h-screen bg-darkBlack text-white flex flex-col items-center justify-center p-4">
-        <h1 className="text-3xl font-bold mb-4 text-premiumRed">Profile Not Found</h1>
-        <p className="text-lightGray mb-6">The user you're looking for doesn't exist.</p>
-        <Link to="/">
-          <Button className="bg-premiumRed hover:bg-premiumRed/90 text-white">
-            Return Home
+      <div className="min-h-screen bg-darkBlack text-white p-4 md:p-8 flex flex-col items-center justify-center animate-fade-in">
+        <div className="text-center max-w-md">
+          <h1 className="text-3xl font-bold mb-2 text-premiumRed">User Not Found</h1>
+          <p className="text-lightGray mb-6">
+            The user profile you're looking for doesn't exist.
+          </p>
+          <Button 
+            onClick={() => navigate("/")}
+            className="bg-premiumRed hover:bg-premiumRed/90 text-white"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Go Back Home
           </Button>
-        </Link>
+        </div>
       </div>
     );
   }
-
+  
   return (
-    <div className="min-h-screen bg-darkBlack text-white">
-      <div className="w-full bg-gradient-to-b from-zinc-900 to-darkBlack pt-12 pb-16">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="flex flex-col items-center">
-            {userProfile?.picture ? (
-              <img 
-                src={userProfile.picture} 
-                alt={userProfile.username} 
-                className="w-24 h-24 rounded-full border-4 border-premiumRed mb-4"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-full bg-muted flex items-center justify-center border-4 border-premiumRed mb-4">
-                <User className="w-12 h-12 text-lightGray" />
-              </div>
+    <div className="min-h-screen bg-darkBlack text-white animate-fade-in">
+      <header className="h-40 bg-gradient-to-r from-premiumRed to-red-700 relative">
+        <div className="absolute top-4 left-4">
+          <Button 
+            variant="ghost" 
+            className="text-white bg-black/40 hover:bg-black/60" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
+        </div>
+      </header>
+      
+      <div className="container mx-auto px-4 pb-20">
+        <div className="relative -mt-16 mb-8 flex flex-col items-center">
+          {profilePic ? (
+            <img 
+              src={profilePic} 
+              alt={username}
+              className="w-32 h-32 rounded-full border-4 border-darkBlack object-cover"
+            />
+          ) : (
+            <div className="w-32 h-32 rounded-full bg-zinc-800 flex items-center justify-center border-4 border-darkBlack">
+              <User className="w-12 h-12 text-zinc-400" />
+            </div>
+          )}
+          
+          <div className="mt-4 text-center">
+            <h1 className="text-2xl font-bold">@{username}</h1>
+            {displayName && displayName !== username && (
+              <p className="text-lightGray opacity-70 mt-1">{displayName}</p>
             )}
-            
-            <h1 className="text-2xl font-bold mb-1">
-              {userProfile?.name || userProfile?.username || 'User'}
-            </h1>
-            
-            <p className="text-lightGray mb-4 flex items-center gap-1">
-              @{userProfile?.username}
-            </p>
-            
-            <a 
-              href="https://www.paypal.me/enzoceon" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="block mt-2"
-            >
-              <Button 
-                className="bg-green-500 hover:bg-green-600 text-white gap-2 px-6"
-              >
-                <HeartHandshake className="w-5 h-5" /> Support Us
-              </Button>
-            </a>
           </div>
         </div>
-      </div>
-      
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h2 className="text-xl font-bold mb-6 flex items-center">
-          Audio Files
-        </h2>
         
-        {audioFiles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {audioFiles.map((audio, index) => (
-              <AudioItem
-                key={index}
-                title={audio.title}
-                username={userProfile?.username || ''}
-                audioFile={audio.file}
-                audioURL={audio.audioURL}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-zinc-900/50 p-8 rounded-lg text-center">
-            <p className="text-lightGray opacity-70">No audio files found</p>
-          </div>
-        )}
+        <div className="mt-10">
+          <h2 className="text-xl font-bold mb-6">Audio Files</h2>
+          
+          {audioFiles.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {audioFiles.map((audio, index) => (
+                <AudioItem
+                  key={index}
+                  title={audio.title}
+                  username={username}
+                  audioFile={audio.file}
+                  audioURL={audio.audioURL}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-zinc-900/50 rounded-lg p-10 text-center">
+              <p className="text-zinc-400">No audio files uploaded yet</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default ProfilePage;
+}
