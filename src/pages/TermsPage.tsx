@@ -67,7 +67,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-xl font-semibold mb-4 text-white">5. Contact Us</h2>
           <p>
-            If you have any questions about these Terms, please <a href="/contact" className="text-premiumRed hover:underline">contact us</a>.
+            If you have any questions about these Terms, please contact us hello@vzee.fun
           </p>
         </section>
       </div>
