@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowRight, Check, X } from "lucide-react";
+import { getCurrentUser, storeUsernameWithEmail, isUsernameTaken } from "@/lib/googleAuth";
 
 interface UsernameSetupProps {
   onComplete: (username: string) => void;
@@ -15,8 +16,9 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const currentUser = getCurrentUser();
 
-  // Simulate checking username availability
+  // Check username availability
   useEffect(() => {
     if (username.length < 3) {
       setIsAvailable(null);
@@ -25,11 +27,10 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
 
     const checkUsername = setTimeout(() => {
       setIsChecking(true);
-      // Mock API call to check username availability
+      // Real check using our helper function
       setTimeout(() => {
-        // Randomly determine if username is available (90% chance of being available)
-        const available = Math.random() > 0.1;
-        setIsAvailable(available);
+        const taken = isUsernameTaken(username);
+        setIsAvailable(!taken);
         setIsChecking(false);
       }, 800);
     }, 500);
@@ -50,7 +51,13 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
     }
     
     setIsSubmitting(true);
-    // Simulate processing
+    
+    // Save username with associated email for future reference
+    if (currentUser?.email) {
+      storeUsernameWithEmail(currentUser.email, username);
+    }
+    
+    // Complete the setup
     setTimeout(() => {
       onComplete(username);
     }, 1000);

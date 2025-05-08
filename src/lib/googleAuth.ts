@@ -1,4 +1,3 @@
-
 // Google Authentication configuration
 const GOOGLE_CLIENT_ID = "763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com";
 const GOOGLE_SCOPES = "email profile";
@@ -57,6 +56,12 @@ export const authenticateWithGoogle = (): Promise<GoogleUser> => {
         // Store user data in localStorage for persistence
         localStorage.setItem('vzeeUser', JSON.stringify(user));
         
+        // Check if this user already has a username stored
+        const existingUsername = getUsernameByEmail(user.email);
+        if (existingUsername) {
+          localStorage.setItem('vzeeUsername', existingUsername);
+        }
+        
         resolve(user);
       } catch (error) {
         console.error('Error processing Google authentication:', error);
@@ -86,8 +91,8 @@ export const authenticateWithGoogle = (): Promise<GoogleUser> => {
 
 // Function to sign out
 export const signOut = (): void => {
+  // Note: We're not removing username here, but we are removing the user
   localStorage.removeItem('vzeeUser');
-  localStorage.removeItem('vzeeUsername');
   if (window.google) {
     window.google.accounts.id.disableAutoSelect();
     window.google.accounts.id.revoke();
@@ -103,6 +108,37 @@ export const isAuthenticated = (): boolean => {
 export const getCurrentUser = (): GoogleUser | null => {
   const userData = localStorage.getItem('vzeeUser');
   return userData ? JSON.parse(userData) : null;
+};
+
+// Store username by email (to keep track of which email has which username)
+export const storeUsernameWithEmail = (email: string, username: string): void => {
+  const usernameMappings = getEmailUsernameMap();
+  usernameMappings[email] = username;
+  localStorage.setItem('vzeeUsernameMap', JSON.stringify(usernameMappings));
+};
+
+// Get all allocated usernames
+export const getAllocatedUsernames = (): string[] => {
+  const usernameMappings = getEmailUsernameMap();
+  return Object.values(usernameMappings);
+};
+
+// Get username by email
+export const getUsernameByEmail = (email: string): string | null => {
+  const usernameMappings = getEmailUsernameMap();
+  return usernameMappings[email] || null;
+};
+
+// Helper to get email-username mapping
+const getEmailUsernameMap = (): Record<string, string> => {
+  const mapData = localStorage.getItem('vzeeUsernameMap');
+  return mapData ? JSON.parse(mapData) : {};
+};
+
+// Check if username is taken
+export const isUsernameTaken = (username: string): boolean => {
+  const allUsernames = getAllocatedUsernames();
+  return allUsernames.includes(username);
 };
 
 // Function to decode JWT token

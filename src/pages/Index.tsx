@@ -4,7 +4,7 @@ import Auth from "@/components/Auth";
 import UsernameSetup from "@/components/UsernameSetup";
 import Dashboard from "@/components/Dashboard";
 import Loading from "@/components/Loading";
-import { getCurrentUser, isAuthenticated as checkIsAuthenticated } from "@/lib/googleAuth";
+import { getCurrentUser, isAuthenticated as checkIsAuthenticated, getUsernameByEmail } from "@/lib/googleAuth";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,10 +24,21 @@ const Index = () => {
       if (authenticated) {
         setIsAuthenticated(true);
         
-        // Check for saved username in localStorage
-        const savedUsername = localStorage.getItem('vzeeUsername');
-        if (savedUsername) {
-          setUsername(savedUsername);
+        // Get current user details
+        const user = getCurrentUser();
+        if (user?.email) {
+          // Check for username mapped to this email
+          const userUsername = getUsernameByEmail(user.email);
+          
+          if (userUsername) {
+            setUsername(userUsername);
+          } else {
+            // Check for fallback in localStorage (legacy support)
+            const savedUsername = localStorage.getItem('vzeeUsername');
+            if (savedUsername) {
+              setUsername(savedUsername);
+            }
+          }
         }
       }
       
@@ -42,6 +53,15 @@ const Index = () => {
     setIsLoading(true);
     setLoadingMessage("Getting things ready...");
     
+    // Check if the authenticated user already has a username
+    const user = getCurrentUser();
+    if (user?.email) {
+      const existingUsername = getUsernameByEmail(user.email);
+      if (existingUsername) {
+        setUsername(existingUsername);
+      }
+    }
+    
     setTimeout(() => {
       setIsLoading(false);
     }, 1500);
@@ -51,7 +71,7 @@ const Index = () => {
     setIsLoading(true);
     setLoadingMessage("Setting up your account...");
     
-    // Save username to localStorage
+    // Save username to localStorage (legacy support)
     localStorage.setItem('vzeeUsername', selectedUsername);
     
     setTimeout(() => {

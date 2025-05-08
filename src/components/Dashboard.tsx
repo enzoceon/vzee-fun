@@ -75,6 +75,23 @@ const Dashboard = ({ username }: DashboardProps) => {
     
     setActiveTab("audio"); // Switch to audio tab after upload
   };
+  
+  const handleDeleteAudio = (titleToDelete: string) => {
+    const updatedFiles = audioFiles.filter(audio => audio.title !== titleToDelete);
+    setAudioFiles(updatedFiles);
+    
+    // Update localStorage
+    try {
+      localStorage.setItem(`${username}_audioFiles`, JSON.stringify(updatedFiles));
+    } catch (error) {
+      console.error("Error updating audio files in localStorage:", error);
+      toast({
+        title: "Storage error",
+        description: "There was a problem updating your audio files. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const renderHomeTab = () => {
     return (
@@ -117,6 +134,7 @@ const Dashboard = ({ username }: DashboardProps) => {
                 username={username}
                 audioFile={audio.file}
                 audioURL={audio.audioURL}
+                onDelete={handleDeleteAudio}
               />
             ))}
           </div>

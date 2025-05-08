@@ -1,23 +1,67 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Play, Pause, Share2 } from "lucide-react";
+import { Copy, Play, Pause, Share2, Trash2 } from "lucide-react";
 import AudioWaveform from "./AudioWaveform";
 import { Link } from "react-router-dom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface AudioItemProps {
   title: string;
   username: string;
   audioFile: File;
   audioURL?: string;
+  onDelete?: (title: string) => void;
 }
 
-const AudioItem = ({ title, username, audioFile, audioURL: providedAudioURL }: AudioItemProps) => {
+const AudioItem = ({ 
+  title, 
+  username, 
+  audioFile, 
+  audioURL: providedAudioURL,
+  onDelete 
+}: AudioItemProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioURL, setAudioURL] = useState<string | null>(providedAudioURL || null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isLongPressing, setIsLongPressing] = useState(false);
+  const longPressTimerRef = useRef<number | null>(null);
   const { toast } = useToast();
+  
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        window.clearTimeout(longPressTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleLongPressStart = () => {
+    longPressTimerRef.current = window.setTimeout(() => {
+      setIsLongPressing(true);
+      setShowDeleteDialog(true);
+    }, 800); // 800ms long press to trigger
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    setIsLongPressing(false);
+  };
   
   const handlePlayPause = () => {
     if (!audioURL) {
@@ -89,59 +133,107 @@ const AudioItem = ({ title, username, audioFile, audioURL: providedAudioURL }: A
         });
     }
   };
+  
+  const handleDelete = () => {
+    setShowDeleteDialog(false);
+    if (onDelete) {
+      onDelete(title);
+      toast({
+        title: "Audio deleted",
+        description: "Your audio file has been deleted",
+      });
+    }
+  };
 
   const audioLink = `/${username}/${title}`;
 
   return (
-    <div className="premium-card relative">
-      {/* Share button in the top right corner with text label */}
-      <Button 
-        variant="ghost" 
-        size="sm"
-        className="absolute top-2 right-2 text-premiumRed hover:bg-muted/50 gap-1"
-        onClick={handleShare}
+    <>
+      <div 
+        className={`premium-card relative ${isLongPressing ? 'bg-muted/20' : ''}`}
+        onTouchStart={handleLongPressStart}
+        onTouchEnd={handleLongPressEnd}
+        onTouchCancel={handleLongPressEnd}
+        onMouseDown={handleLongPressStart}
+        onMouseUp={handleLongPressEnd}
+        onMouseLeave={handleLongPressEnd}
       >
-        <Share2 className="h-4 w-4" />
-        Share
-      </Button>
+        {/* Share button in the top right corner with text label */}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="absolute top-2 right-2 text-premiumRed hover:bg-muted/50 gap-1"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleShare();
+          }}
+        >
+          <Share2 className="h-4 w-4" />
+          Share
+        </Button>
 
-      <div className="flex justify-between items-center mb-3">
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            className="h-8 w-8 rounded-full bg-premiumRed text-white hover:bg-opacity-80"
-            onClick={handlePlayPause}
-          >
-            {isPlaying ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
-          </Button>
-          <Link to={audioLink} className="font-medium hover:text-premiumRed transition-colors">
-            {title}
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              className="h-8 w-8 rounded-full bg-premiumRed text-white hover:bg-opacity-80"
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePlayPause();
+              }}
+            >
+              {isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+            </Button>
+            <Link to={audioLink} className="font-medium hover:text-premiumRed transition-colors">
+              {title}
+            </Link>
+          </div>
+        </div>
+        
+        <AudioWaveform isPlaying={isPlaying} className="my-3" />
+        
+        <div className="flex justify-between items-center mt-3">
+          <Link to={audioLink} className="text-xs text-muted-foreground hover:text-premiumRed transition-colors">
+            vzee.fun/{username}/{title}
           </Link>
+          <Button 
+            variant="outline"
+            size="sm" 
+            className="text-xs border-premiumRed text-premiumRed hover:bg-premiumRed hover:text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopyLink();
+            }}
+          >
+            <Copy className="h-3 w-3 mr-1" />
+            Copy Link
+          </Button>
         </div>
       </div>
       
-      <AudioWaveform isPlaying={isPlaying} className="my-3" />
-      
-      <div className="flex justify-between items-center mt-3">
-        <Link to={audioLink} className="text-xs text-muted-foreground hover:text-premiumRed transition-colors">
-          vzee.fun/{username}/{title}
-        </Link>
-        <Button 
-          variant="outline"
-          size="sm" 
-          className="text-xs border-premiumRed text-premiumRed hover:bg-premiumRed hover:text-white"
-          onClick={handleCopyLink}
-        >
-          <Copy className="h-3 w-3 mr-1" />
-          Copy Link
-        </Button>
-      </div>
-    </div>
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Audio</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-premiumRed text-white hover:bg-premiumRed/90">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
 
