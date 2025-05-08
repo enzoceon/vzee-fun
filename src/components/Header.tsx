@@ -17,6 +17,8 @@ import {
   CollapsibleTrigger
 } from "@/components/ui/collapsible";
 import { useNavigate } from "react-router-dom";
+import googleAuth from "@/utils/googleAuth";
+import { useEffect } from "react";
 
 interface HeaderProps {
   username: string;
@@ -28,6 +30,15 @@ const Header = ({ username }: HeaderProps) => {
   const navigate = useNavigate();
   const [legalOpen, setLegalOpen] = useState(false);
   const [supportOpen, setSupportOpen] = useState(false);
+  const [userPicture, setUserPicture] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Get user picture if available
+    const user = googleAuth.getUser();
+    if (user && user.picture) {
+      setUserPicture(user.picture);
+    }
+  }, []);
   
   const toggleProfilePanel = () => {
     setShowPanel(!showPanel);
@@ -119,10 +130,18 @@ const Header = ({ username }: HeaderProps) => {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-lightGray" 
+            className="text-lightGray relative" 
             onClick={toggleProfilePanel}
           >
-            <User className="w-5 h-5" />
+            {userPicture ? (
+              <img 
+                src={userPicture} 
+                alt="Profile" 
+                className="w-8 h-8 rounded-full"
+              />
+            ) : (
+              <User className="w-5 h-5" />
+            )}
           </Button>
         </div>
       </header>

@@ -3,13 +3,14 @@ import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, User, LogOut, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import googleAuth from "@/utils/googleAuth";
 
 interface ProfilePanelProps {
   username: string;
   onClose: () => void;
 }
 
-const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfilePanelProps) => {
+const ProfilePanel = ({ username: initialUsername, onClose }: ProfilePanelProps) => {
   const { toast } = useToast();
   const panelRef = useRef<HTMLDivElement>(null);
   const [username, setUsername] = useState(initialUsername);
@@ -17,6 +18,19 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   const [newUsername, setNewUsername] = useState(initialUsername);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState({ name: '', email: '', picture: '' });
+  
+  useEffect(() => {
+    // Get user data from Google auth
+    const user = googleAuth.getUser();
+    if (user) {
+      setUserData({
+        name: user.name || '',
+        email: user.email || '',
+        picture: user.picture || ''
+      });
+    }
+  }, []);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -32,12 +46,14 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   }, [onClose]);
   
   const handleSignOut = () => {
+    googleAuth.signOut();
+    
     toast({
       title: "Signing out",
       description: "You have been signed out successfully",
     });
-    // In a real app, this would sign the user out and redirect to login
-    // For now, we'll just reload the page
+    
+    // In a real app, this would redirect to login
     window.location.reload();
   };
   
@@ -109,7 +125,6 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
       <div 
         ref={panelRef}
         className="w-full max-w-sm bg-black h-full overflow-y-auto shadow-lg animate-slide-right"
-        {...props}
       >
         <div className="p-6">
           <div className="flex justify-between items-center mb-8">
@@ -120,11 +135,19 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
           </div>
           
           <div className="flex flex-col items-center mb-8">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-premiumRed mb-4">
-              <User className="w-10 h-10 text-lightGray" />
-            </div>
-            <span className="text-lg font-medium text-lightGray">Demo User</span>
-            <span className="text-sm text-muted-foreground">user@example.com</span>
+            {userData.picture ? (
+              <img 
+                src={userData.picture} 
+                alt="Profile" 
+                className="w-20 h-20 rounded-full border-2 border-premiumRed mb-4"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-premiumRed mb-4">
+                <User className="w-10 h-10 text-lightGray" />
+              </div>
+            )}
+            <span className="text-lg font-medium text-lightGray">{userData.name || 'User'}</span>
+            <span className="text-sm text-muted-foreground">{userData.email || ''}</span>
           </div>
           
           <div className="bg-muted bg-opacity-30 rounded-lg p-4 mb-6">

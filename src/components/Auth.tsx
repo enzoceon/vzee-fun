@@ -1,7 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { useToast } from "@/hooks/use-toast";
+import googleAuth from "@/utils/googleAuth";
 
 interface AuthProps {
   onAuthenticated: () => void;
@@ -9,16 +12,75 @@ interface AuthProps {
 
 const Auth = ({ onAuthenticated }: AuthProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { toast } = useToast();
   
-  const handleGoogleLogin = () => {
+  // Google client ID provided by the user
+  const GOOGLE_CLIENT_ID = "763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com";
+  
+  // Handle successful Google login
+  const handleGoogleLoginSuccess = async (credentialResponse: any) => {
     setIsAuthenticating(true);
-    // Simulate Google authentication (in a real app, this would connect to Google)
-    setTimeout(() => {
+    
+    try {
+      // Get user info from Google token
+      const response = await fetch(
+        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${credentialResponse.access_token}`
+      );
+      
+      // If we got an ID token instead of access token, we need to decode it manually
+      if (credentialResponse.credential) {
+        // Parse the JWT token payload (second part between dots)
+        const payload = credentialResponse.credential.split('.')[1];
+        const decoded = JSON.parse(atob(payload));
+        
+        // Save user in our auth system
+        googleAuth.setUser({
+          name: decoded.name || 'User',
+          email: decoded.email,
+          picture: decoded.picture
+        });
+        
+        onAuthenticated();
+        toast({
+          title: "Successfully signed in",
+          description: `Welcome, ${decoded.given_name || 'User'}!`,
+        });
+      } else {
+        // Handle case with access_token
+        const data = await response.json();
+        googleAuth.setUser({
+          name: data.name || 'User',
+          email: data.email,
+          picture: data.picture
+        });
+        
+        onAuthenticated();
+        toast({
+          title: "Successfully signed in",
+          description: `Welcome, ${data.given_name || 'User'}!`,
+        });
+      }
+    } catch (error) {
+      console.error("Google authentication error:", error);
+      toast({
+        variant: "destructive",
+        title: "Authentication failed",
+        description: "There was an error authenticating with Google.",
+      });
+    } finally {
       setIsAuthenticating(false);
-      onAuthenticated();
-    }, 1500);
+    }
   };
   
+  const handleGoogleLoginError = () => {
+    toast({
+      variant: "destructive",
+      title: "Authentication failed",
+      description: "There was an error authenticating with Google.",
+    });
+    setIsAuthenticating(false);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-screen w-full bg-darkBlack text-white p-4 animate-fade-in">
       <h1 className="text-4xl md:text-5xl font-bold mb-6 text-premiumRed">
@@ -28,26 +90,18 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
         Upload your audio and get a unique link to share. Your audio will autoplay when someone visits your link.
       </p>
       
-      <Button
-        onClick={handleGoogleLogin}
-        disabled={isAuthenticating}
-        className="btn-premium flex items-center gap-2 min-w-[220px] justify-center"
-      >
-        {isAuthenticating ? (
-          <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        ) : (
-          <>
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" className="w-5 h-5">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-              <path d="M1 1h22v22H1z" fill="none" />
-            </svg>
-            Continue with Google <ArrowRight className="w-4 h-4" />
-          </>
-        )}
-      </Button>
+      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <GoogleLogin
+          onSuccess={handleGoogleLoginSuccess}
+          onError={handleGoogleLoginError}
+          useOneTap
+          theme="filled_black"
+          text="continue_with"
+          shape="pill"
+          size="large"
+          logo_alignment="left"
+        />
+      </GoogleOAuthProvider>
     </div>
   );
 };
