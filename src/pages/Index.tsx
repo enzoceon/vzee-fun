@@ -4,7 +4,7 @@ import Auth from "@/components/Auth";
 import UsernameSetup from "@/components/UsernameSetup";
 import Dashboard from "@/components/Dashboard";
 import Loading from "@/components/Loading";
-import { getCurrentUser, isAuthenticated } from "@/lib/googleAuth";
+import { getCurrentUser, isAuthenticated as checkIsAuthenticated } from "@/lib/googleAuth";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,7 +19,7 @@ const Index = () => {
       setLoadingMessage("Checking authentication...");
       
       // Check if user is already authenticated
-      const authenticated = isAuthenticated();
+      const authenticated = checkIsAuthenticated();
       
       if (authenticated) {
         setIsAuthenticated(true);
