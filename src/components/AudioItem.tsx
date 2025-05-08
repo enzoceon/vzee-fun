@@ -10,17 +10,18 @@ interface AudioItemProps {
   title: string;
   username: string;
   audioFile: File;
+  audioURL?: string;
 }
 
-const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
+const AudioItem = ({ title, username, audioFile, audioURL: providedAudioURL }: AudioItemProps) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [audioURL, setAudioURL] = useState<string | null>(null);
+  const [audioURL, setAudioURL] = useState<string | null>(providedAudioURL || null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   
   const handlePlayPause = () => {
     if (!audioURL) {
-      // Create URL from file
+      // Create URL from file if not provided
       const url = URL.createObjectURL(audioFile);
       setAudioURL(url);
       
@@ -39,12 +40,21 @@ const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
           audioElement.play();
         }
         setIsPlaying(!isPlaying);
+      } else {
+        // If audio element not created yet but URL exists
+        const audio = new Audio(audioURL);
+        audio.addEventListener("ended", () => {
+          setIsPlaying(false);
+        });
+        setAudioElement(audio);
+        audio.play();
+        setIsPlaying(true);
       }
     }
   };
   
   const handleCopyLink = () => {
-    const link = `vzee.fun/${username}/${title}`;
+    const link = `${window.location.origin}/${username}/${title}`;
     navigator.clipboard.writeText(link).then(() => {
       toast({
         title: "Link copied",
@@ -54,7 +64,7 @@ const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
   };
 
   const handleShare = () => {
-    const shareUrl = `vzee.fun/${username}/${title}`;
+    const shareUrl = `${window.location.origin}/${username}/${title}`;
     
     if (navigator.share) {
       navigator.share({

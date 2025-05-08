@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "./Header";
 import AudioItem from "./AudioItem";
 import AudioUploadModal from "./AudioUploadModal";
@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 interface AudioFile {
   title: string;
   file: File;
+  audioURL: string;
+  createdAt: number;
 }
 
 interface DashboardProps {
@@ -22,9 +24,55 @@ const Dashboard = ({ username }: DashboardProps) => {
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
   const [activeTab, setActiveTab] = useState<"home" | "audio">("home");
   const { toast } = useToast();
+
+  // Load saved audio files from localStorage on mount
+  useEffect(() => {
+    const savedAudioFiles = localStorage.getItem(`${username}_audioFiles`);
+    if (savedAudioFiles) {
+      try {
+        const parsedFiles = JSON.parse(savedAudioFiles);
+        setAudioFiles(parsedFiles);
+        
+        // If we have audio files, switch to audio tab
+        if (parsedFiles && parsedFiles.length > 0) {
+          setActiveTab("audio");
+        }
+      } catch (error) {
+        console.error("Error loading saved audio files:", error);
+        toast({
+          title: "Error loading audio files",
+          description: "There was a problem loading your saved audio files.",
+          variant: "destructive",
+        });
+      }
+    }
+  }, [username, toast]);
   
   const handleUploadComplete = (title: string, file: File) => {
-    setAudioFiles([...audioFiles, { title, file }]);
+    // Create URL for the file
+    const audioURL = URL.createObjectURL(file);
+    const newAudioFile: AudioFile = { 
+      title, 
+      file, 
+      audioURL,
+      createdAt: Date.now() 
+    };
+    
+    const updatedFiles = [...audioFiles, newAudioFile];
+    setAudioFiles(updatedFiles);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem(`${username}_audioFiles`, JSON.stringify(updatedFiles));
+    } catch (error) {
+      console.error("Error saving audio files to localStorage:", error);
+      toast({
+        title: "Storage error",
+        description: "There was a problem saving your audio file. Please try again.",
+        variant: "destructive",
+      });
+    }
+    
     setActiveTab("audio"); // Switch to audio tab after upload
   };
 
@@ -68,6 +116,7 @@ const Dashboard = ({ username }: DashboardProps) => {
                 title={audio.title}
                 username={username}
                 audioFile={audio.file}
+                audioURL={audio.audioURL}
               />
             ))}
           </div>

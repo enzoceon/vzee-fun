@@ -6,20 +6,55 @@ import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
+interface AudioData {
+  audioURL: string;
+  title: string;
+  username: string;
+  duration?: number;
+}
+
 const AudioPage = () => {
   const { username, title } = useParams<{ username: string; title: string }>();
   const [isLoading, setIsLoading] = useState(true);
-  const [exists, setExists] = useState(true);
+  const [exists, setExists] = useState(false);
+  const [audioData, setAudioData] = useState<AudioData | null>(null);
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Simulate checking if the audio exists
-    setTimeout(() => {
-      // In a real app, we would make an API call to check if the audio exists
-      const audioExists = Math.random() > 0.1; // 90% chance it exists
-      setExists(audioExists);
+    if (!username || !title) {
+      setExists(false);
       setIsLoading(false);
-    }, 1000);
+      return;
+    }
+
+    // Check if we have locally stored audio
+    const storedAudios = localStorage.getItem(`${username}_audioFiles`);
+    
+    if (storedAudios) {
+      try {
+        const audioFiles = JSON.parse(storedAudios);
+        const foundAudio = audioFiles.find((audio: any) => audio.title === title);
+        
+        if (foundAudio) {
+          setExists(true);
+          setAudioData({
+            audioURL: foundAudio.audioURL,
+            title: foundAudio.title,
+            username: username
+          });
+        } else {
+          setExists(false);
+        }
+      } catch (error) {
+        console.error("Error parsing stored audio data:", error);
+        setExists(false);
+      }
+    } else {
+      // No locally stored audio found
+      setExists(false);
+    }
+    
+    setIsLoading(false);
   }, [username, title]);
   
   const handleBack = () => {
@@ -30,7 +65,7 @@ const AudioPage = () => {
     return <Loading message="Loading audio..." />;
   }
   
-  if (!exists) {
+  if (!exists || !audioData) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-darkBlack text-white p-4 text-center">
         <h1 className="text-3xl font-bold mb-4 text-premiumRed">Audio Not Found</h1>
@@ -59,7 +94,11 @@ const AudioPage = () => {
         <ArrowLeft className="mr-1 h-4 w-4" />
         Back
       </Button>
-      <AudioPlayer />
+      <AudioPlayer 
+        audioURL={audioData.audioURL} 
+        title={audioData.title} 
+        username={audioData.username} 
+      />
     </div>
   );
 };

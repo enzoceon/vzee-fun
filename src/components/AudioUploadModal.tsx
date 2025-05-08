@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { X, FileAudio, CheckCircle, Share } from "lucide-react";
 
 interface AudioUploadModalProps {
@@ -27,9 +27,22 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     
     if (newTitle.length >= 3) {
       setIsChecking(true);
+      
+      // Check if title is already in use in localStorage
       setTimeout(() => {
-        // Simulate checking if title is available
-        setTitleAvailable(Math.random() > 0.1);
+        const savedAudios = localStorage.getItem(`${username}_audioFiles`);
+        let isTitleTaken = false;
+        
+        if (savedAudios) {
+          try {
+            const audioFiles = JSON.parse(savedAudios);
+            isTitleTaken = audioFiles.some((audio: any) => audio.title === newTitle);
+          } catch (error) {
+            console.error("Error checking title availability:", error);
+          }
+        }
+        
+        setTitleAvailable(!isTitleTaken);
         setIsChecking(false);
       }, 600);
     } else {
@@ -48,6 +61,18 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
         });
         return;
       }
+      
+      // Check file size (10MB limit)
+      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      if (selectedFile.size > maxSize) {
+        toast({
+          title: "File too large",
+          description: "Maximum file size is 10MB",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       setFile(selectedFile);
     }
   };
@@ -66,16 +91,24 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     
     setIsUploading(true);
     
-    // Simulate upload process
-    setTimeout(() => {
-      setIsUploading(false);
+    try {
+      // Process the upload
       onUploadComplete(title, file);
+      setIsUploading(false);
       onClose();
       toast({
         title: "Upload successful",
-        description: `Your audio "${title}" has been uploaded`,
+        description: `Your audio "${title}" has been uploaded and is ready to share`,
       });
-    }, 2000);
+    } catch (error) {
+      console.error("Upload error:", error);
+      setIsUploading(false);
+      toast({
+        title: "Upload failed",
+        description: "There was an error processing your upload. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
@@ -180,7 +213,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
               <div className="flex items-center justify-center gap-2 text-sm">
                 <Share className="w-4 h-4 text-zinc-400" />
                 <p className="text-zinc-400">
-                  {username ? `vzee.fun/${username}/${title || ""}` : "Create your unique share link"}
+                  {username ? `${window.location.origin}/${username}/${title || ""}` : "Create your unique share link"}
                 </p>
               </div>
             </div>

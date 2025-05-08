@@ -1,7 +1,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, User, LogOut, Check } from "lucide-react";
+import { X, User, LogOut, Check, HeartHandshake } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut, getCurrentUser } from "@/lib/googleAuth";
 
@@ -91,8 +91,8 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     
     // Simulate API call to check username availability and save
     setTimeout(() => {
-      // Simulate username taken check (randomly)
-      const isTaken = newUsername === "admin" || newUsername === "test" || Math.random() > 0.8;
+      // Simulate username taken check (avoid the generated "randomly taken" logic)
+      const isTaken = newUsername === "admin" || newUsername === "test";
       
       if (isTaken) {
         setError("This username is already taken");
@@ -100,7 +100,19 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
         return;
       }
       
+      // Update username
       setUsername(newUsername);
+      
+      // Store to localStorage
+      localStorage.setItem('vzeeUsername', newUsername);
+      
+      // Rename user's audio files in localStorage if they exist
+      const oldAudioFiles = localStorage.getItem(`${initialUsername}_audioFiles`);
+      if (oldAudioFiles) {
+        localStorage.setItem(`${newUsername}_audioFiles`, oldAudioFiles);
+        localStorage.removeItem(`${initialUsername}_audioFiles`);
+      }
+      
       setIsChangingUsername(false);
       setIsSubmitting(false);
       
@@ -108,6 +120,17 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
         description: "Username updated successfully!",
       });
     }, 1000);
+  };
+
+  const handleSupport = () => {
+    // Open a mock support page or payment gateway
+    toast({
+      title: "Thank you!",
+      description: "Support feature coming soon. Thanks for your interest!",
+    });
+    
+    // Could open a support page in a new tab
+    // window.open('https://vzee.fun/support', '_blank');
   };
 
   return (
@@ -211,7 +234,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
             )}
           </div>
           
-          <div className="mt-auto">
+          <div className="mt-auto space-y-4">
             <Button 
               variant="outline" 
               className="w-full flex items-center justify-center gap-2 hover:bg-premiumRed hover:text-white border-premiumRed text-premiumRed" 
@@ -219,6 +242,15 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
             >
               <LogOut className="w-4 h-4" />
               Sign Out
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="w-full flex items-center justify-center gap-2 hover:bg-green-600 hover:text-white border-green-500 text-green-500" 
+              onClick={handleSupport}
+            >
+              <HeartHandshake className="w-4 h-4" />
+              Support Us
             </Button>
           </div>
         </div>
