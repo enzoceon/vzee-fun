@@ -4,12 +4,38 @@ import Auth from "@/components/Auth";
 import UsernameSetup from "@/components/UsernameSetup";
 import Dashboard from "@/components/Dashboard";
 import Loading from "@/components/Loading";
+import { getCurrentUser } from "@/lib/googleAuth";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("Loading...");
+  
+  // Check for existing authentication on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoading(true);
+      setLoadingMessage("Checking authentication...");
+      
+      // Check if user is already authenticated
+      const user = getCurrentUser();
+      
+      if (user) {
+        setIsAuthenticated(true);
+        
+        // Check for saved username in localStorage
+        const savedUsername = localStorage.getItem('vzeeUsername');
+        if (savedUsername) {
+          setUsername(savedUsername);
+        }
+      }
+      
+      setIsLoading(false);
+    };
+    
+    checkAuth();
+  }, []);
   
   const handleAuthentication = () => {
     setIsAuthenticated(true);
@@ -24,6 +50,9 @@ const Index = () => {
   const handleUsernameComplete = (selectedUsername: string) => {
     setIsLoading(true);
     setLoadingMessage("Setting up your account...");
+    
+    // Save username to localStorage
+    localStorage.setItem('vzeeUsername', selectedUsername);
     
     setTimeout(() => {
       setUsername(selectedUsername);

@@ -1,7 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { initializeGoogleAuth, authenticateWithGoogle } from "@/lib/googleAuth";
 
 interface AuthProps {
   onAuthenticated: () => void;
@@ -9,14 +11,36 @@ interface AuthProps {
 
 const Auth = ({ onAuthenticated }: AuthProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const { toast } = useToast();
   
-  const handleGoogleLogin = () => {
+  useEffect(() => {
+    // Initialize Google Auth on component mount
+    initializeGoogleAuth().catch(error => {
+      console.error("Failed to initialize Google authentication:", error);
+      toast({
+        title: "Authentication Error",
+        description: "Failed to load Google authentication",
+        variant: "destructive",
+      });
+    });
+  }, [toast]);
+  
+  const handleGoogleLogin = async () => {
     setIsAuthenticating(true);
-    // Simulate Google authentication (in a real app, this would connect to Google)
-    setTimeout(() => {
-      setIsAuthenticating(false);
+    
+    try {
+      await authenticateWithGoogle();
       onAuthenticated();
-    }, 1500);
+    } catch (error) {
+      console.error("Google authentication error:", error);
+      toast({
+        title: "Authentication Failed",
+        description: "Could not authenticate with Google. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
   
   return (
@@ -32,6 +56,7 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
         onClick={handleGoogleLogin}
         disabled={isAuthenticating}
         className="btn-premium flex items-center gap-2 min-w-[220px] justify-center"
+        id="google-signin-button" // This div will be used by Google's renderButton
       >
         {isAuthenticating ? (
           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

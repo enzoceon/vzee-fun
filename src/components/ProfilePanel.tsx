@@ -3,6 +3,7 @@ import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, User, LogOut, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { signOut, getCurrentUser } from "@/lib/googleAuth";
 
 interface ProfilePanelProps {
   username: string;
@@ -18,6 +19,11 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
+  const user = getCurrentUser();
+  const displayName = user?.name || "User";
+  const email = user?.email || "user@example.com";
+  const profilePicture = user?.picture;
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (panelRef.current && !panelRef.current.contains(event.target as Node)) {
@@ -32,12 +38,12 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   }, [onClose]);
   
   const handleSignOut = () => {
+    signOut();
     toast({
       title: "Signing out",
       description: "You have been signed out successfully",
     });
-    // In a real app, this would sign the user out and redirect to login
-    // For now, we'll just reload the page
+    // Reload the page to return to the auth screen
     window.location.reload();
   };
   
@@ -120,11 +126,19 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
           </div>
           
           <div className="flex flex-col items-center mb-8">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-premiumRed mb-4">
-              <User className="w-10 h-10 text-lightGray" />
-            </div>
-            <span className="text-lg font-medium text-lightGray">Demo User</span>
-            <span className="text-sm text-muted-foreground">user@example.com</span>
+            {profilePicture ? (
+              <img 
+                src={profilePicture} 
+                alt="Profile" 
+                className="w-20 h-20 rounded-full mb-4 border-2 border-premiumRed"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-premiumRed mb-4">
+                <User className="w-10 h-10 text-lightGray" />
+              </div>
+            )}
+            <span className="text-lg font-medium text-lightGray">{displayName}</span>
+            <span className="text-sm text-muted-foreground">{email}</span>
           </div>
           
           <div className="bg-muted bg-opacity-30 rounded-lg p-4 mb-6">
