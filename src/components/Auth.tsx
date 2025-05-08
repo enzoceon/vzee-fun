@@ -13,11 +13,26 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { toast } = useToast();
   
-  // Supabase client configuration
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  // Supabase client configuration with fallbacks and error handling
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   
-  // Initialize Supabase client
+  // Early return with error message if environment variables are not set
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error("Missing Supabase environment variables");
+    return (
+      <div className="flex flex-col items-center justify-center h-screen w-full bg-darkBlack text-white p-4 animate-fade-in">
+        <h1 className="text-4xl md:text-5xl font-bold mb-6 text-premiumRed">
+          vzee.fun
+        </h1>
+        <p className="text-sm text-lightGray mb-10 opacity-70 max-w-xs text-center">
+          Error: Supabase configuration is missing. Please check your environment variables.
+        </p>
+      </div>
+    );
+  }
+  
+  // Initialize Supabase client only if we have the required values
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   
   const handleGoogleSignIn = async () => {
