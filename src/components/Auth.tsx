@@ -1,10 +1,10 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useToast } from "@/hooks/use-toast";
 import googleAuth from "@/utils/googleAuth";
+import jwt_decode from "jwt-decode";
 
 interface AuthProps {
   onAuthenticated: () => void;
@@ -22,16 +22,10 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
     setIsAuthenticating(true);
     
     try {
-      // Get user info from Google token
-      const response = await fetch(
-        `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${credentialResponse.access_token}`
-      );
-      
-      // If we got an ID token instead of access token, we need to decode it manually
+      // For credential response with ID token
       if (credentialResponse.credential) {
-        // Parse the JWT token payload (second part between dots)
-        const payload = credentialResponse.credential.split('.')[1];
-        const decoded = JSON.parse(atob(payload));
+        // Parse the JWT token payload
+        const decoded: any = jwt_decode(credentialResponse.credential);
         
         // Save user in our auth system
         googleAuth.setUser({
@@ -46,18 +40,10 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
           description: `Welcome, ${decoded.given_name || 'User'}!`,
         });
       } else {
-        // Handle case with access_token
-        const data = await response.json();
-        googleAuth.setUser({
-          name: data.name || 'User',
-          email: data.email,
-          picture: data.picture
-        });
-        
-        onAuthenticated();
         toast({
-          title: "Successfully signed in",
-          description: `Welcome, ${data.given_name || 'User'}!`,
+          variant: "destructive",
+          title: "Authentication failed",
+          description: "Invalid authentication response from Google.",
         });
       }
     } catch (error) {
