@@ -17,7 +17,7 @@ export default function TermsPage() {
         Back
       </Button>
       
-      <h1 className="text-3xl font-bold mb-6 text-premiumRed">Terms and Conditions</h1>
+      <h1 className="text-3xl font-bold mb-6 text-premiumRed">Terms of use</h1>
       
       <div className="max-w-2xl mx-auto space-y-6 text-lightGray text-sm md:text-base">
         <section>
