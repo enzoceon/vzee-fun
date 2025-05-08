@@ -1,8 +1,8 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { Copy, Play, Pause } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Copy, Play, Pause, Share2 } from "lucide-react";
 import AudioWaveform from "./AudioWaveform";
 
 interface AudioItemProps {
@@ -52,8 +52,45 @@ const AudioItem = ({ title, username, audioFile }: AudioItemProps) => {
     });
   };
 
+  const handleShare = () => {
+    const shareUrl = `vzee.fun/${username}/${title}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `Listen to ${title} on vzee.fun`,
+        text: `Check out this audio file: ${title}`,
+        url: shareUrl,
+      })
+      .then(() => {
+        toast({ description: "Shared successfully!" });
+      })
+      .catch(() => {
+        toast({ description: "Sharing cancelled or failed" });
+      });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      navigator.clipboard.writeText(shareUrl)
+        .then(() => {
+          toast({ description: "Audio URL copied to clipboard!" });
+        })
+        .catch(() => {
+          toast({ variant: "destructive", description: "Failed to copy URL" });
+        });
+    }
+  };
+
   return (
-    <div className="premium-card">
+    <div className="premium-card relative">
+      {/* Share button in the top right corner (green area in the mockup) */}
+      <Button 
+        variant="ghost" 
+        size="icon"
+        className="absolute top-2 right-2 h-8 w-8 text-premiumRed hover:bg-muted/50"
+        onClick={handleShare}
+      >
+        <Share2 className="h-4 w-4" />
+      </Button>
+
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <Button 

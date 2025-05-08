@@ -5,7 +5,7 @@ import AudioItem from "./AudioItem";
 import AudioUploadModal from "./AudioUploadModal";
 import TabNavigation from "./TabNavigation";
 import { Button } from "@/components/ui/button";
-import { Plus, Share2 } from "lucide-react";
+import { Plus, Share2, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface AudioFile {
@@ -25,6 +25,7 @@ const Dashboard = ({ username }: DashboardProps) => {
   
   const handleUploadComplete = (title: string, file: File) => {
     setAudioFiles([...audioFiles, { title, file }]);
+    setActiveTab("audio"); // Switch to audio tab after upload
   };
 
   const handleShare = () => {
@@ -45,52 +46,31 @@ const Dashboard = ({ username }: DashboardProps) => {
   };
 
   const renderHomeTab = () => {
-    if (audioFiles.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center h-[50vh] animate-fade-in">
-          <div className="absolute top-4 right-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-lightGray hover:text-premiumRed"
-              onClick={handleShare}
-            >
-              <Share2 className="w-5 h-5" />
-            </Button>
-          </div>
-          <h2 className="text-3xl font-bold mb-4">Share Your Audio</h2>
-          <p className="text-muted-foreground text-center max-w-md mb-8">
-            Upload your first audio file to get started. Your unique audio page will be instantly shared with the world.
-          </p>
+    return (
+      <div className="flex flex-col items-center justify-center mt-10">
+        <h2 className="text-3xl font-bold mb-4">Share Your Audio</h2>
+        <p className="text-muted-foreground text-center max-w-md mb-6">
+          Upload your first audio file to get started. Your unique audio page will be instantly shared with the world.
+        </p>
+        <Button
+          className="bg-premiumRed hover:bg-premiumRed/90 text-white rounded-full px-6 flex items-center gap-2"
+          onClick={() => setShowUploadModal(true)}
+        >
+          <Upload className="h-5 w-5" />
+          Upload Audio
+        </Button>
+        <div className="absolute top-4 right-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-lightGray hover:text-premiumRed"
+            onClick={handleShare}
+          >
+            <Share2 className="w-5 h-5" />
+          </Button>
         </div>
-      );
-    } else {
-      return (
-        <div className="mt-4">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">Your Audio Files</h2>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-lightGray hover:text-premiumRed"
-              onClick={handleShare}
-            >
-              <Share2 className="w-5 h-5" />
-            </Button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {audioFiles.map((audio, index) => (
-              <AudioItem 
-                key={index}
-                title={audio.title}
-                username={username}
-                audioFile={audio.file}
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
+      </div>
+    );
   };
 
   const renderAudioTab = () => {
@@ -106,7 +86,7 @@ const Dashboard = ({ username }: DashboardProps) => {
       return (
         <div className="mt-4">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-bold">All Audio Files</h2>
+            <h2 className="text-xl font-bold">Your Audio Files</h2>
             <Button
               variant="ghost"
               size="icon"
