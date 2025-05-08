@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import ImprovedAuth from "@/components/ImprovedAuth";
+import Auth from "@/components/Auth";
 import UsernameSetup from "@/components/UsernameSetup";
 import Dashboard from "@/components/Dashboard";
 import Loading from "@/components/Loading";
@@ -85,7 +85,7 @@ const Index = () => {
   }
   
   if (!isAuthenticated) {
-    return <ImprovedAuth onAuthenticated={handleAuthentication} />;
+    return <Auth onAuthenticated={handleAuthentication} />;
   }
   
   if (!username) {

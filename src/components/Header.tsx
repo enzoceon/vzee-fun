@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, User, X, ChevronDown, ChevronRight, Mail, FileText, ShieldCheck, Cookie, HeartHandshake } from "lucide-react";
+import { Menu, User, X, ChevronDown, ChevronRight, Mail, FileText, ShieldCheck, Cookie } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProfilePanel from "./ProfilePanel";
 import {
@@ -70,6 +70,14 @@ const Header = ({ username }: HeaderProps) => {
                       >
                         Contact Us
                       </Link>
+                      <a 
+                        href="https://www.paypal.me/enzoceon" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Support Us
+                      </a>
                     </CollapsibleContent>
                   </Collapsible>
                   
@@ -111,15 +119,6 @@ const Header = ({ username }: HeaderProps) => {
                       >
                         Cookie Policy
                       </Link>
-                      <a 
-                        href="https://www.paypal.me/enzoceon" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
-                      >
-                        <HeartHandshake className="h-4 w-4 mr-2" />
-                        Support Us
-                      </a>
                     </CollapsibleContent>
                   </Collapsible>
                 </nav>
