@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { useToast } from "@/hooks/use-toast";
 import googleAuth from "@/utils/googleAuth";
-import jwt_decode from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 
 interface AuthProps {
   onAuthenticated: () => void;
@@ -25,7 +25,7 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
       // For credential response with ID token
       if (credentialResponse.credential) {
         // Parse the JWT token payload
-        const decoded: any = jwt_decode(credentialResponse.credential);
+        const decoded: any = jwtDecode(credentialResponse.credential);
         
         // Save user in our auth system
         googleAuth.setUser({
