@@ -2,10 +2,11 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User } from "lucide-react";
+import { ArrowLeft, User, Copy, Share } from "lucide-react";
 import AudioItem from "@/components/AudioItem";
 import Loading from "@/components/Loading";
 import { getEmailUsernameMap } from "@/lib/googleAuth";
+import { useToast } from "@/hooks/use-toast";
 
 interface AudioFile {
   title: string;
@@ -25,6 +26,38 @@ export default function ProfilePage() {
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
+
+  const copyProfileUrl = () => {
+    const profileUrl = `${window.location.origin}/@${username}`;
+    navigator.clipboard.writeText(profileUrl);
+    toast({
+      title: "Copied to clipboard",
+      description: "Profile URL has been copied to clipboard",
+    });
+  };
+
+  const shareProfile = () => {
+    const profileUrl = `${window.location.origin}/@${username}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${username}'s profile on vzee.fun`,
+        text: `Check out ${username}'s profile on vzee.fun`,
+        url: profileUrl,
+      }).then(() => {
+        toast({
+          title: "Profile shared successfully",
+          description: "Thanks for sharing!",
+        });
+      }).catch((error) => {
+        console.error('Error sharing:', error);
+        copyProfileUrl(); // Fallback to copying the URL
+      });
+    } else {
+      copyProfileUrl(); // Fallback for browsers that don't support share
+    }
+  };
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -145,6 +178,25 @@ export default function ProfilePage() {
             {displayName && displayName !== username && (
               <p className="text-lightGray opacity-70 mt-1">{displayName}</p>
             )}
+          </div>
+          
+          <div className="flex gap-3 mt-4">
+            <Button
+              variant="outline" 
+              size="sm"
+              className="flex items-center gap-2"
+              onClick={copyProfileUrl}
+            >
+              <Copy className="w-4 h-4" /> Copy URL
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              className="flex items-center gap-2 bg-premiumRed hover:bg-premiumRed/90"
+              onClick={shareProfile}
+            >
+              <Share className="w-4 h-4" /> Share Profile
+            </Button>
           </div>
         </div>
         

@@ -1,7 +1,7 @@
 
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X, User, LogOut, Check, HeartHandshake, UserCheck, AlertTriangle, Loader2 } from "lucide-react";
+import { X, User, LogOut, Check, HeartHandshake, UserCheck, AlertTriangle, Loader2, Copy, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut, getCurrentUser } from "@/lib/googleAuth";
 import { useNavigate } from "react-router-dom";
@@ -69,14 +69,43 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   };
 
   const navigateToProfile = () => {
-    // Format username correctly for the URL
-    const formattedUsername = username.startsWith('@') ? username : `@${username}`;
     // Close the panel first
     onClose();
-    // Navigate after a small delay to ensure panel is closed
+    // Navigate to the profile page with proper formatting
     setTimeout(() => {
-      navigate(`/${formattedUsername}`);
+      navigate(`/@${username}`);
     }, 100);
+  };
+
+  const copyProfileUrl = () => {
+    const profileUrl = `${window.location.origin}/@${username}`;
+    navigator.clipboard.writeText(profileUrl);
+    toast({
+      title: "Copied to clipboard",
+      description: "Profile URL has been copied to clipboard",
+    });
+  };
+
+  const shareProfile = () => {
+    const profileUrl = `${window.location.origin}/@${username}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `${username}'s profile on vzee.fun`,
+        text: `Check out ${username}'s profile on vzee.fun`,
+        url: profileUrl,
+      }).then(() => {
+        toast({
+          title: "Profile shared successfully",
+          description: "Thanks for sharing!",
+        });
+      }).catch((error) => {
+        console.error('Error sharing:', error);
+        copyProfileUrl(); // Fallback to copying the URL
+      });
+    } else {
+      copyProfileUrl(); // Fallback for browsers that don't support share
+    }
   };
   
   const toggleChangeUsername = () => {
@@ -169,6 +198,8 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
       description: "Your username has been updated successfully!",
     });
   };
+
+  const fullProfileUrl = `vzee.fun/@${username}`;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-end z-50 animate-fade-in">
@@ -282,19 +313,39 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 mt-1">
-                <div className="bg-muted p-2 rounded-md flex-1 text-left">
-                  <span className="text-muted-foreground">@</span>
-                  <span className="text-lightGray font-medium">{username}</span>
+              <div className="space-y-3 mt-1">
+                <div className="flex items-center gap-2">
+                  <div className="bg-muted p-2 rounded-md flex-1 text-left">
+                    <span className="text-lightGray font-medium">{fullProfileUrl}</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={toggleChangeUsername}
+                    className="whitespace-nowrap"
+                  >
+                    Change
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={toggleChangeUsername}
-                  className="whitespace-nowrap"
-                >
-                  Change
-                </Button>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={copyProfileUrl}
+                  >
+                    <Copy className="w-4 h-4" /> Copy
+                  </Button>
+                  <Button 
+                    variant="default"
+                    size="sm"
+                    className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
+                    onClick={shareProfile}
+                  >
+                    <Share className="w-4 h-4" /> Share
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -331,3 +382,4 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
 };
 
 export default ProfilePanel;
+
