@@ -1,3 +1,4 @@
+
 // Google Authentication configuration
 const GOOGLE_CLIENT_ID = "763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com";
 const GOOGLE_SCOPES = "email profile";
@@ -56,6 +57,14 @@ export const authenticateWithGoogle = (): Promise<GoogleUser> => {
         // Store user data in localStorage for persistence
         localStorage.setItem('vzeeUser', JSON.stringify(user));
         
+        // Store user in all users map
+        const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
+        allUsers[user.email] = {
+          name: user.name,
+          picture: user.picture
+        };
+        localStorage.setItem('vzeeAllUsers', JSON.stringify(allUsers));
+        
         // Check if this user already has a username stored
         const existingUsername = getUsernameByEmail(user.email);
         if (existingUsername) {
@@ -113,14 +122,37 @@ export const getCurrentUser = (): GoogleUser | null => {
 // Store username by email (to keep track of which email has which username)
 export const storeUsernameWithEmail = (email: string, username: string): void => {
   const usernameMappings = getEmailUsernameMap();
+  
+  // First check if username exists in the global username list
+  const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+  
+  // If this is a new username, add it to the global list
+  if (!allUsernames.includes(username)) {
+    allUsernames.push(username);
+    localStorage.setItem('vzeeAllUsernames', JSON.stringify(allUsernames));
+  }
+  
+  // Map the email to the username
   usernameMappings[email] = username;
   localStorage.setItem('vzeeUsernameMap', JSON.stringify(usernameMappings));
 };
 
 // Get all allocated usernames
 export const getAllocatedUsernames = (): string[] => {
+  // Get usernames from the global list
+  const globalUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+  
+  // Also get usernames from the email mapping as a fallback
   const usernameMappings = getEmailUsernameMap();
-  return Object.values(usernameMappings);
+  const mappedUsernames = Object.values(usernameMappings);
+  
+  // Combine the two lists and remove duplicates
+  const allUsernames = [...new Set([...globalUsernames, ...mappedUsernames])];
+  
+  // Update the global username list to ensure consistency
+  localStorage.setItem('vzeeAllUsernames', JSON.stringify(allUsernames));
+  
+  return allUsernames;
 };
 
 // Get username by email
@@ -129,8 +161,8 @@ export const getUsernameByEmail = (email: string): string | null => {
   return usernameMappings[email] || null;
 };
 
-// Helper to get email-username mapping
-const getEmailUsernameMap = (): Record<string, string> => {
+// Helper to get email-username mapping - now exported
+export const getEmailUsernameMap = (): Record<string, string> => {
   const mapData = localStorage.getItem('vzeeUsernameMap');
   return mapData ? JSON.parse(mapData) : {};
 };

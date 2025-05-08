@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { X, User, LogOut, Check, HeartHandshake } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { signOut, getCurrentUser } from "@/lib/googleAuth";
+import { useNavigate } from "react-router-dom";
 
 interface ProfilePanelProps {
   username: string;
@@ -13,6 +14,7 @@ interface ProfilePanelProps {
 const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfilePanelProps) => {
   const { toast } = useToast();
   const panelRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [username, setUsername] = useState(initialUsername);
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(initialUsername);
@@ -45,6 +47,11 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     });
     // Reload the page to return to the auth screen
     window.location.reload();
+  };
+
+  const navigateToProfile = () => {
+    navigate(`/@${username}`);
+    onClose();
   };
   
   const toggleChangeUsername = () => {
@@ -89,48 +96,50 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setIsSubmitting(true);
     setError(null);
     
-    // Simulate API call to check username availability and save
-    setTimeout(() => {
-      // Simulate username taken check (avoid the generated "randomly taken" logic)
-      const isTaken = newUsername === "admin" || newUsername === "test";
-      
-      if (isTaken) {
-        setError("This username is already taken");
-        setIsSubmitting(false);
-        return;
-      }
-      
-      // Update username
-      setUsername(newUsername);
-      
-      // Store to localStorage
-      localStorage.setItem('vzeeUsername', newUsername);
-      
-      // Rename user's audio files in localStorage if they exist
-      const oldAudioFiles = localStorage.getItem(`${initialUsername}_audioFiles`);
-      if (oldAudioFiles) {
-        localStorage.setItem(`${newUsername}_audioFiles`, oldAudioFiles);
-        localStorage.removeItem(`${initialUsername}_audioFiles`);
-      }
-      
-      setIsChangingUsername(false);
-      setIsSubmitting(false);
-      
-      toast({
-        description: "Username updated successfully!",
-      });
-    }, 1000);
-  };
-
-  const handleSupport = () => {
-    // Open a mock support page or payment gateway
-    toast({
-      title: "Thank you!",
-      description: "Support feature coming soon. Thanks for your interest!",
-    });
+    // First check if username is taken globally
+    const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+    const isTakenGlobally = allUsernames.includes(newUsername);
     
-    // Could open a support page in a new tab
-    // window.open('https://vzee.fun/support', '_blank');
+    if (isTakenGlobally && newUsername !== username) {
+      setError("This username is already taken");
+      setIsSubmitting(false);
+      return;
+    }
+    
+    // Update username in the global usernames list
+    if (username !== newUsername) {
+      const updatedUsernames = allUsernames.filter((name: string) => name !== username);
+      updatedUsernames.push(newUsername);
+      localStorage.setItem('vzeeAllUsernames', JSON.stringify(updatedUsernames));
+    }
+    
+    // Update username
+    setUsername(newUsername);
+    
+    // Store to localStorage
+    localStorage.setItem('vzeeUsername', newUsername);
+    
+    // Update username in the email-username mapping
+    const user = getCurrentUser();
+    if (user?.email) {
+      const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
+      usernameMappings[user.email] = newUsername;
+      localStorage.setItem('vzeeUsernameMap', JSON.stringify(usernameMappings));
+    }
+    
+    // Rename user's audio files in localStorage if they exist
+    const oldAudioFiles = localStorage.getItem(`${initialUsername}_audioFiles`);
+    if (oldAudioFiles) {
+      localStorage.setItem(`${newUsername}_audioFiles`, oldAudioFiles);
+      localStorage.removeItem(`${initialUsername}_audioFiles`);
+    }
+    
+    setIsChangingUsername(false);
+    setIsSubmitting(false);
+    
+    toast({
+      description: "Username updated successfully!",
+    });
   };
 
   return (
@@ -162,6 +171,14 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
             )}
             <span className="text-lg font-medium text-lightGray">{displayName}</span>
             <span className="text-sm text-muted-foreground">{email}</span>
+            
+            <Button 
+              variant="ghost" 
+              className="mt-4 text-sm text-premiumRed hover:bg-premiumRed/10"
+              onClick={navigateToProfile}
+            >
+              View Public Profile
+            </Button>
           </div>
           
           <div className="bg-muted bg-opacity-30 rounded-lg p-4 mb-6">
@@ -171,7 +188,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
               <div className="mt-2 space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="bg-muted p-2 rounded-md flex-1">
-                    <span className="text-muted-foreground">vzee.fun/</span>
+                    <span className="text-muted-foreground">@</span>
                     <input 
                       type="text"
                       value={newUsername}
@@ -219,7 +236,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
             ) : (
               <div className="flex items-center gap-2 mt-1">
                 <div className="bg-muted p-2 rounded-md flex-1 text-left">
-                  <span className="text-muted-foreground">vzee.fun/</span>
+                  <span className="text-muted-foreground">@</span>
                   <span className="text-lightGray font-medium">{username}</span>
                 </div>
                 <Button 
@@ -244,14 +261,20 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
               Sign Out
             </Button>
             
-            <Button 
-              variant="outline" 
-              className="w-full flex items-center justify-center gap-2 hover:bg-green-600 hover:text-white border-green-500 text-green-500" 
-              onClick={handleSupport}
+            <a 
+              href="https://www.paypal.me/enzoceon"
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="block w-full"
             >
-              <HeartHandshake className="w-4 h-4" />
-              Support Us
-            </Button>
+              <Button 
+                variant="outline" 
+                className="w-full flex items-center justify-center gap-2 border-green-500 bg-green-500 text-white hover:bg-green-600" 
+              >
+                <HeartHandshake className="w-4 h-4" />
+                Support Us
+              </Button>
+            </a>
           </div>
         </div>
       </div>

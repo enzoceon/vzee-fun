@@ -12,7 +12,10 @@ interface AudioData {
 }
 
 const AudioPage = () => {
-  const { username, title } = useParams<{ username: string; title: string }>();
+  // Use username parameter which may or may not have the @ prefix
+  const { username: rawUsername, title } = useParams<{ username: string; title: string }>();
+  const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
+  
   const [isLoading, setIsLoading] = useState(true);
   const [exists, setExists] = useState(false);
   const [audioData, setAudioData] = useState<AudioData | null>(null);

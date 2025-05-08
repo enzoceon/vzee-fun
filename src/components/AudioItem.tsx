@@ -98,7 +98,7 @@ const AudioItem = ({
   };
   
   const handleCopyLink = () => {
-    const link = `${window.location.origin}/${username}/${title}`;
+    const link = `${window.location.origin}/@${username}/${title}`;
     navigator.clipboard.writeText(link).then(() => {
       toast({
         title: "Link copied",
@@ -108,7 +108,7 @@ const AudioItem = ({
   };
 
   const handleShare = () => {
-    const shareUrl = `${window.location.origin}/${username}/${title}`;
+    const shareUrl = `${window.location.origin}/@${username}/${title}`;
     
     if (navigator.share) {
       navigator.share({
@@ -145,7 +145,7 @@ const AudioItem = ({
     }
   };
 
-  const audioLink = `/${username}/${title}`;
+  const audioLink = `/@${username}/${title}`;
 
   return (
     <>
@@ -199,7 +199,7 @@ const AudioItem = ({
         
         <div className="flex justify-between items-center mt-3">
           <Link to={audioLink} className="text-xs text-muted-foreground hover:text-premiumRed transition-colors">
-            vzee.fun/{username}/{title}
+            vzee.fun/@{username}/{title}
           </Link>
           <Button 
             variant="outline"

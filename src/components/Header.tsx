@@ -67,6 +67,14 @@ const Header = ({ username }: HeaderProps) => {
                       >
                         Contact Us
                       </a>
+                      <a 
+                        href="https://www.paypal.me/enzoceon" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Support Us
+                      </a>
                     </CollapsibleContent>
                   </Collapsible>
                   
@@ -113,7 +121,9 @@ const Header = ({ username }: HeaderProps) => {
           </Sheet>
           
           <h1 className="text-premiumRed font-bold text-xl">
-            vzee.fun
+            <a href="/" className="hover:opacity-90 transition-opacity">
+              vzee.fun
+            </a>
           </h1>
           
           <Button 

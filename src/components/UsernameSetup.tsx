@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { ArrowRight, Check, X } from "lucide-react";
-import { getCurrentUser, storeUsernameWithEmail, isUsernameTaken } from "@/lib/googleAuth";
+import { getCurrentUser, storeUsernameWithEmail, isUsernameTaken, getAllocatedUsernames } from "@/lib/googleAuth";
 
 interface UsernameSetupProps {
   onComplete: (username: string) => void;
@@ -18,6 +18,25 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
   const { toast } = useToast();
   const currentUser = getCurrentUser();
 
+  // Initialize all usernames list if it doesn't exist
+  useEffect(() => {
+    if (!localStorage.getItem('vzeeAllUsernames')) {
+      localStorage.setItem('vzeeAllUsernames', JSON.stringify([]));
+    }
+    
+    // Store this user in the all users map if they're not already there
+    if (currentUser?.email) {
+      const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
+      if (!allUsers[currentUser.email]) {
+        allUsers[currentUser.email] = {
+          name: currentUser.name,
+          picture: currentUser.picture
+        };
+        localStorage.setItem('vzeeAllUsers', JSON.stringify(allUsers));
+      }
+    }
+  }, [currentUser]);
+
   // Check username availability
   useEffect(() => {
     if (username.length < 3) {
@@ -27,7 +46,8 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
 
     const checkUsername = setTimeout(() => {
       setIsChecking(true);
-      // Real check using our helper function
+      
+      // Check against all usernames in localStorage
       setTimeout(() => {
         const taken = isUsernameTaken(username);
         setIsAvailable(!taken);
@@ -55,6 +75,13 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
     // Save username with associated email for future reference
     if (currentUser?.email) {
       storeUsernameWithEmail(currentUser.email, username);
+      
+      // Update all usernames list
+      const allUsernames = getAllocatedUsernames();
+      if (!allUsernames.includes(username)) {
+        allUsernames.push(username);
+        localStorage.setItem('vzeeAllUsernames', JSON.stringify(allUsernames));
+      }
     }
     
     // Complete the setup
@@ -72,7 +99,7 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
           <div className="relative">
             <div className="flex items-center border border-muted rounded-md bg-secondary overflow-hidden focus-within:ring-1 focus-within:ring-premiumRed">
               <span className="text-sm text-muted-foreground px-3 py-3">
-                vzee.fun/
+                @
               </span>
               <Input
                 value={username}
@@ -107,6 +134,15 @@ const UsernameSetup = ({ onComplete }: UsernameSetupProps) => {
                 Username must be at least 3 characters
               </p>
             )}
+          </div>
+          
+          <div className="bg-zinc-900/50 p-4 rounded-lg mb-4">
+            <p className="text-xs text-lightGray opacity-70">
+              Your public profile will be available at:
+            </p>
+            <p className="text-sm font-medium mt-1">
+              vzee.fun/@{username || 'username'}
+            </p>
           </div>
           
           <Button 

@@ -213,7 +213,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
               <div className="flex items-center justify-center gap-2 text-sm">
                 <Share className="w-4 h-4 text-zinc-400" />
                 <p className="text-zinc-400">
-                  {username ? `${window.location.origin}/${username}/${title || ""}` : "Create your unique share link"}
+                  {username ? `${window.location.origin}/@${username}/${title || ""}` : "Create your unique share link"}
                 </p>
               </div>
             </div>
