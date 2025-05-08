@@ -1,4 +1,3 @@
-
 // Google Authentication configuration
 const GOOGLE_CLIENT_ID = "763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com";
 const GOOGLE_SCOPES = "email profile";
@@ -100,7 +99,7 @@ export const authenticateWithGoogle = (): Promise<GoogleUser> => {
 
 // Function to sign out
 export const signOut = (): void => {
-  // Note: We're not removing username here, but we are removing the user
+  // Note: We're no longer removing username here
   localStorage.removeItem('vzeeUser');
   if (window.google) {
     window.google.accounts.id.disableAutoSelect();

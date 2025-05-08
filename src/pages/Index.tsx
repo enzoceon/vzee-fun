@@ -4,7 +4,12 @@ import Auth from "@/components/Auth";
 import UsernameSetup from "@/components/UsernameSetup";
 import Dashboard from "@/components/Dashboard";
 import Loading from "@/components/Loading";
-import { getCurrentUser, isAuthenticated as checkIsAuthenticated, getUsernameByEmail } from "@/lib/googleAuth";
+import { 
+  getCurrentUser, 
+  isAuthenticated as checkIsAuthenticated, 
+  getUsernameByEmail, 
+  storeUsernameWithEmail
+} from "@/lib/googleAuth";
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -32,11 +37,15 @@ const Index = () => {
           
           if (userUsername) {
             setUsername(userUsername);
+            // Also ensure it's saved to localStorage for legacy support
+            localStorage.setItem('vzeeUsername', userUsername);
           } else {
             // Check for fallback in localStorage (legacy support)
             const savedUsername = localStorage.getItem('vzeeUsername');
             if (savedUsername) {
               setUsername(savedUsername);
+              // Store this username with the user's email for persistence
+              storeUsernameWithEmail(user.email, savedUsername);
             }
           }
         }
@@ -59,6 +68,8 @@ const Index = () => {
       const existingUsername = getUsernameByEmail(user.email);
       if (existingUsername) {
         setUsername(existingUsername);
+        // Also ensure it's saved to localStorage for legacy support
+        localStorage.setItem('vzeeUsername', existingUsername);
       }
     }
     
@@ -73,6 +84,19 @@ const Index = () => {
     
     // Save username to localStorage (legacy support)
     localStorage.setItem('vzeeUsername', selectedUsername);
+    
+    // Save username with email for persistence between sessions
+    const user = getCurrentUser();
+    if (user?.email) {
+      storeUsernameWithEmail(user.email, selectedUsername);
+    }
+    
+    // Also save to global username list for availability checking
+    const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+    if (!allUsernames.includes(selectedUsername)) {
+      allUsernames.push(selectedUsername);
+      localStorage.setItem('vzeeAllUsernames', JSON.stringify(allUsernames));
+    }
     
     setTimeout(() => {
       setUsername(selectedUsername);

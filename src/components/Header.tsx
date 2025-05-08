@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, User, X, ChevronDown, ChevronRight, Mail, FileText, ShieldCheck, Cookie } from "lucide-react";
+import { Menu, User, X, ChevronDown, ChevronRight, FileText, ShieldCheck, Cookie, HeartHandshake } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProfilePanel from "./ProfilePanel";
 import {
@@ -27,7 +27,6 @@ const Header = ({ username }: HeaderProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [legalOpen, setLegalOpen] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
   
   const toggleProfilePanel = () => {
     setShowPanel(!showPanel);
@@ -49,39 +48,7 @@ const Header = ({ username }: HeaderProps) => {
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-4">
                 <nav className="flex flex-col gap-2">
-                  
-                  {/* Support Section */}
-                  <Collapsible 
-                    open={supportOpen} 
-                    onOpenChange={setSupportOpen}
-                    className="w-full"
-                  >
-                    <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50">
-                      <span className="flex items-center">
-                        <Mail className="h-4 w-4 mr-2" />
-                        Support
-                      </span>
-                      {supportOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-4">
-                      <Link 
-                        to="/contact" 
-                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
-                      >
-                        Contact Us
-                      </Link>
-                      <a 
-                        href="https://www.paypal.me/enzoceon" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
-                      >
-                        Support Us
-                      </a>
-                    </CollapsibleContent>
-                  </Collapsible>
-                  
-                  {/* Legal Section */}
+                  {/* Legal Section with Support Us moved here */}
                   <Collapsible 
                     open={legalOpen} 
                     onOpenChange={setLegalOpen}
@@ -119,8 +86,25 @@ const Header = ({ username }: HeaderProps) => {
                       >
                         Cookie Policy
                       </Link>
+                      <a 
+                        href="https://www.paypal.me/enzoceon" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="flex items-center py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        <HeartHandshake className="h-4 w-4 mr-2" />
+                        Support Us
+                      </a>
                     </CollapsibleContent>
                   </Collapsible>
+                  
+                  {/* Contact link moved to top level */}
+                  <Link 
+                    to="/contact" 
+                    className="flex items-center py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                  >
+                    Contact Us
+                  </Link>
                 </nav>
               </div>
             </SheetContent>

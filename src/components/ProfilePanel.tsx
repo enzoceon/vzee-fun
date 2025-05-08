@@ -330,12 +330,12 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                 
                 <div className="flex gap-2">
                   <Button 
-                    variant="outline"
+                    variant="default"
                     size="sm"
-                    className="flex-1"
+                    className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
                     onClick={copyProfileUrl}
                   >
-                    <Copy className="w-4 h-4" /> Copy
+                    <Copy className="w-4 h-4 mr-1" /> Copy
                   </Button>
                   <Button 
                     variant="default"
@@ -343,7 +343,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                     className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
                     onClick={shareProfile}
                   >
-                    <Share className="w-4 h-4" /> Share
+                    <Share className="w-4 h-4 mr-1" /> Share
                   </Button>
                 </div>
               </div>
@@ -382,4 +382,3 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
 };
 
 export default ProfilePanel;
-

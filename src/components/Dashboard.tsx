@@ -13,6 +13,7 @@ interface AudioFile {
   file: File;
   audioURL: string;
   createdAt: number;
+  blobData?: string; // Add blob data for persistence
 }
 
 interface DashboardProps {
@@ -31,10 +32,22 @@ const Dashboard = ({ username }: DashboardProps) => {
     if (savedAudioFiles) {
       try {
         const parsedFiles = JSON.parse(savedAudioFiles);
-        setAudioFiles(parsedFiles);
+        
+        // Process saved files - recreate Blob URLs if needed
+        const processedFiles = parsedFiles.map((file: AudioFile) => {
+          if (file.blobData && !file.audioURL.startsWith('blob:')) {
+            // Recreate blob from stored data
+            const blob = dataURItoBlob(file.blobData);
+            const audioURL = URL.createObjectURL(blob);
+            return {...file, audioURL};
+          }
+          return file;
+        });
+        
+        setAudioFiles(processedFiles);
         
         // If we have audio files, switch to audio tab
-        if (parsedFiles && parsedFiles.length > 0) {
+        if (processedFiles && processedFiles.length > 0) {
           setActiveTab("audio");
         }
       } catch (error) {
@@ -48,13 +61,52 @@ const Dashboard = ({ username }: DashboardProps) => {
     }
   }, [username, toast]);
   
-  const handleUploadComplete = (title: string, file: File) => {
+  // Function to convert data URI to Blob
+  function dataURItoBlob(dataURI: string) {
+    // Convert base64/URLEncoded data component to raw binary data
+    let byteString;
+    if (dataURI.split(',')[0].indexOf('base64') >= 0) {
+      byteString = atob(dataURI.split(',')[1]);
+    } else {
+      byteString = decodeURIComponent(dataURI.split(',')[1]);
+    }
+    
+    // Separate out the mime component
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    
+    // Write the bytes of the string to an ArrayBuffer
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    
+    // Create a new Blob with the ArrayBuffer
+    return new Blob([ab], {type: mimeString});
+  }
+  
+  // Function to convert Blob to data URI for storage
+  function blobToDataURI(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = (e) => reject(e);
+      reader.readAsDataURL(blob);
+    });
+  }
+  
+  const handleUploadComplete = async (title: string, file: File) => {
     // Create URL for the file
     const audioURL = URL.createObjectURL(file);
+    
+    // Convert file to data URI for storage
+    const blobData = await blobToDataURI(file);
+    
     const newAudioFile: AudioFile = { 
       title, 
       file, 
       audioURL,
+      blobData,
       createdAt: Date.now() 
     };
     
