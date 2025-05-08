@@ -44,6 +44,93 @@ const Dashboard = ({ username }: DashboardProps) => {
     }
   };
 
+  const renderHomeTab = () => {
+    if (audioFiles.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[50vh] animate-fade-in">
+          <div className="absolute top-4 right-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-lightGray hover:text-premiumRed"
+              onClick={handleShare}
+            >
+              <Share2 className="w-5 h-5" />
+            </Button>
+          </div>
+          <h2 className="text-3xl font-bold mb-4">Share Your Audio</h2>
+          <p className="text-muted-foreground text-center max-w-md mb-8">
+            Upload your first audio file to get started. Your unique audio page will be instantly shared with the world.
+          </p>
+        </div>
+      );
+    } else {
+      return (
+        <div className="mt-4">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Your Audio Files</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-lightGray hover:text-premiumRed"
+              onClick={handleShare}
+            >
+              <Share2 className="w-5 h-5" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {audioFiles.map((audio, index) => (
+              <AudioItem 
+                key={index}
+                title={audio.title}
+                username={username}
+                audioFile={audio.file}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+  };
+
+  const renderAudioTab = () => {
+    if (audioFiles.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[50vh] animate-fade-in">
+          <p className="text-muted-foreground text-center">
+            No audio files yet. Upload your first audio to get started.
+          </p>
+        </div>
+      );
+    } else {
+      return (
+        <div className="mt-4">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">All Audio Files</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-lightGray hover:text-premiumRed"
+              onClick={handleShare}
+            >
+              <Share2 className="w-5 h-5" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {audioFiles.map((audio, index) => (
+              <AudioItem 
+                key={index}
+                title={audio.title}
+                username={username}
+                audioFile={audio.file}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-darkBlack text-lightGray">
       <Header username={username} />
@@ -51,48 +138,7 @@ const Dashboard = ({ username }: DashboardProps) => {
       <main className="px-4 py-4 max-w-4xl mx-auto">
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
         
-        {audioFiles.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[60vh] animate-fade-in">
-            <div className="absolute top-4 right-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-lightGray hover:text-premiumRed"
-                onClick={handleShare}
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </div>
-            <h2 className="text-3xl font-bold mb-4">Share Your Audio</h2>
-            <p className="text-muted-foreground text-center max-w-md mb-8">
-              Upload your first audio file to get started. Your unique audio page will be instantly shared with the world.
-            </p>
-          </div>
-        ) : (
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">Your Audio Files</h2>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-lightGray hover:text-premiumRed"
-                onClick={handleShare}
-              >
-                <Share2 className="w-5 h-5" />
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {audioFiles.map((audio, index) => (
-                <AudioItem 
-                  key={index}
-                  title={audio.title}
-                  username={username}
-                  audioFile={audio.file}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        {activeTab === "home" ? renderHomeTab() : renderAudioTab()}
       </main>
       
       {/* Floating upload button */}

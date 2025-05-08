@@ -10,12 +10,12 @@ interface TabNavigationProps {
 
 const TabNavigation = ({ activeTab, onTabChange }: TabNavigationProps) => {
   return (
-    <div className="flex justify-center w-full max-w-md mx-auto mt-4 mb-8 px-4">
+    <div className="flex justify-center w-full max-w-sm mx-auto mt-4 mb-6 px-4">
       <div className="bg-[#1a1a1a] rounded-full p-1 flex w-full">
         <button
           onClick={() => onTabChange("home")}
           className={cn(
-            "flex-1 py-3 rounded-full text-center transition-colors",
+            "flex-1 py-2 rounded-full text-center transition-colors text-sm",
             activeTab === "home"
               ? "bg-white text-black font-medium"
               : "text-white/80 hover:text-white"
@@ -26,7 +26,7 @@ const TabNavigation = ({ activeTab, onTabChange }: TabNavigationProps) => {
         <button
           onClick={() => onTabChange("audio")}
           className={cn(
-            "flex-1 py-3 rounded-full text-center transition-colors",
+            "flex-1 py-2 rounded-full text-center transition-colors text-sm",
             activeTab === "audio"
               ? "bg-white text-black font-medium"
               : "text-white/80 hover:text-white"
