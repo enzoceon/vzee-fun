@@ -5,6 +5,7 @@ import UsernameSetup from "@/components/UsernameSetup";
 import Dashboard from "@/components/Dashboard";
 import Loading from "@/components/Loading";
 import googleAuth from "@/utils/googleAuth";
+import { createClient } from '@supabase/supabase-js';
 
 const Index = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -12,23 +13,87 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("Loading...");
   
+  // Supabase client configuration
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  const supabase = createClient(supabaseUrl, supabaseAnonKey);
+  
   // Check for existing authentication on component mount
   useEffect(() => {
-    const user = googleAuth.getUser();
-    if (user) {
-      setIsAuthenticated(true);
+    const checkAuth = async () => {
+      // Check for Supabase session
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Check if user has a username (in a real app this would be fetched from backend)
-      const savedUsername = localStorage.getItem('vzee_username');
-      if (savedUsername) {
-        setUsername(savedUsername);
+      if (session) {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          // Save user in our auth system
+          googleAuth.setUser({
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+            email: user.email || '',
+            picture: user.user_metadata?.avatar_url
+          });
+          
+          setIsAuthenticated(true);
+          
+          // Check if user has a username
+          const savedUsername = localStorage.getItem('vzee_username');
+          if (savedUsername) {
+            setUsername(savedUsername);
+          }
+        }
       }
-    }
-    
-    // Simulating network request
-    setTimeout(() => {
+      
+      // Also check URL for OAuth response
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      
+      if (accessToken) {
+        // Remove hash from URL to prevent issues on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      
       setIsLoading(false);
-    }, 500);
+    };
+    
+    checkAuth();
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session) {
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            // Save user in our auth system
+            googleAuth.setUser({
+              name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+              email: user.email || '',
+              picture: user.user_metadata?.avatar_url
+            });
+            
+            setIsAuthenticated(true);
+            
+            // Check if user has a username
+            const savedUsername = localStorage.getItem('vzee_username');
+            if (savedUsername) {
+              setUsername(savedUsername);
+            } else {
+              setLoadingMessage("Setting up your account...");
+            }
+          }
+        } else if (event === 'SIGNED_OUT') {
+          googleAuth.signOut();
+          setIsAuthenticated(false);
+          setUsername(null);
+        }
+      }
+    );
+    
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
   
   const handleAuthentication = () => {
