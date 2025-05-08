@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, User, LogOut, Check, HeartHandshake, UserCheck, AlertTriangle, Loader2, Copy, Share } from "lucide-react";
@@ -335,7 +334,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                     className="flex-1"
                     onClick={copyProfileUrl}
                   >
-                    <Copy className="w-4 h-4" /> Copy
+                    <Copy className="w-4 h-4 mr-2" /> Copy
                   </Button>
                   <Button 
                     variant="default"
@@ -343,7 +342,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                     className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
                     onClick={shareProfile}
                   >
-                    <Share className="w-4 h-4" /> Share
+                    <Share className="w-4 h-4 mr-2" /> Share
                   </Button>
                 </div>
               </div>
@@ -382,4 +381,3 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
 };
 
 export default ProfilePanel;
-
