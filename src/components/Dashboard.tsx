@@ -51,7 +51,7 @@ const Dashboard = ({ username }: DashboardProps) => {
       return (
         <div className="flex flex-col items-center justify-center h-[50vh] animate-fade-in">
           <p className="text-muted-foreground text-center">
-            No audio files yet. Upload your first audio to get started.
+            No audio files uploaded yet
           </p>
         </div>
       );

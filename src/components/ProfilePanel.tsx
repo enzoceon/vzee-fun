@@ -108,7 +108,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     <div className="fixed inset-0 bg-black bg-opacity-70 flex justify-end z-50 animate-fade-in">
       <div 
         ref={panelRef}
-        className="w-full max-w-sm bg-secondary h-full overflow-y-auto shadow-lg animate-slide-right"
+        className="w-full max-w-sm bg-black h-full overflow-y-auto shadow-lg animate-slide-right"
         {...props}
       >
         <div className="p-6">
