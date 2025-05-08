@@ -1,7 +1,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { signInWithGoogle } from "@/lib/googleAuth";
+import { authenticateWithGoogle } from "@/lib/googleAuth";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2, UserCheck, ShieldCheck, Headphones, Globe } from "lucide-react";
 
@@ -36,7 +36,7 @@ const ImprovedAuth = ({ onAuthenticated }: AuthProps) => {
   const handleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
+      await authenticateWithGoogle();
       toast({
         title: "Sign in successful",
         description: "Welcome back to vzee.fun!",
