@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import AudioWaveform from "./AudioWaveform";
 import { Button } from "@/components/ui/button";
-import { Play, Pause, Volume2, VolumeX, ArrowLeft } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 import { Helmet } from "react-helmet";
 
 interface AudioPlayerProps {
