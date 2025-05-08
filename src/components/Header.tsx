@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, User, X, ChevronDown, ChevronRight, FileText, ShieldCheck, Cookie, HeartHandshake } from "lucide-react";
+import { Menu, User, X, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ProfilePanel from "./ProfilePanel";
 import {
@@ -48,7 +48,7 @@ const Header = ({ username }: HeaderProps) => {
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-4">
                 <nav className="flex flex-col gap-2">
-                  {/* Legal Section with Support Us moved here */}
+                  {/* Legal Section */}
                   <Collapsible 
                     open={legalOpen} 
                     onOpenChange={setLegalOpen}
@@ -86,25 +86,14 @@ const Header = ({ username }: HeaderProps) => {
                       >
                         Cookie Policy
                       </Link>
-                      <a 
-                        href="https://www.paypal.me/enzoceon" 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="flex items-center py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      <Link 
+                        to="/contact" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
                       >
-                        <HeartHandshake className="h-4 w-4 mr-2" />
-                        Support Us
-                      </a>
+                        Contact Us
+                      </Link>
                     </CollapsibleContent>
                   </Collapsible>
-                  
-                  {/* Contact link moved to top level */}
-                  <Link 
-                    to="/contact" 
-                    className="flex items-center py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
-                  >
-                    Contact Us
-                  </Link>
                 </nav>
               </div>
             </SheetContent>

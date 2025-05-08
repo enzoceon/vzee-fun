@@ -1,227 +1,164 @@
 
-import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Copy, Share } from "lucide-react";
+import { ArrowLeft, User } from "lucide-react";
 import AudioItem from "@/components/AudioItem";
 import Loading from "@/components/Loading";
-import { getEmailUsernameMap } from "@/lib/googleAuth";
-import { useToast } from "@/hooks/use-toast";
+
+interface UserProfile {
+  username: string;
+  name?: string;
+  picture?: string;
+}
 
 interface AudioFile {
   title: string;
   file: File;
   audioURL: string;
+  blobData?: string;
   createdAt: number;
 }
 
-export default function ProfilePage() {
+const ProfilePage = () => {
   const { username: rawUsername } = useParams<{ username: string }>();
-  // Clean up username parameter (remove @ if present)
   const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
   const [isLoading, setIsLoading] = useState(true);
-  const [userExists, setUserExists] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
-  const [profilePic, setProfilePic] = useState<string | null>(null);
-  const [displayName, setDisplayName] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const copyProfileUrl = () => {
-    const profileUrl = `${window.location.origin}/@${username}`;
-    navigator.clipboard.writeText(profileUrl);
-    toast({
-      title: "Copied to clipboard",
-      description: "Profile URL has been copied to clipboard",
-    });
-  };
-
-  const shareProfile = () => {
-    const profileUrl = `${window.location.origin}/@${username}`;
-    
-    if (navigator.share) {
-      navigator.share({
-        title: `${username}'s profile on vzee.fun`,
-        text: `Check out ${username}'s profile on vzee.fun`,
-        url: profileUrl,
-      }).then(() => {
-        toast({
-          title: "Profile shared successfully",
-          description: "Thanks for sharing!",
-        });
-      }).catch((error) => {
-        console.error('Error sharing:', error);
-        copyProfileUrl(); // Fallback to copying the URL
-      });
-    } else {
-      copyProfileUrl(); // Fallback for browsers that don't support share
-    }
-  };
 
   useEffect(() => {
-    const loadUserProfile = async () => {
-      setIsLoading(true);
-      
-      if (!username) {
-        setUserExists(false);
-        setIsLoading(false);
-        return;
-      }
-      
-      // Update the document title
-      document.title = `@${username} - vzee.fun`;
-      
-      // Check if this username exists in our system
-      const usernameMappings = getEmailUsernameMap();
-      const allUsernames = Object.values(usernameMappings);
-      const usernameExists = allUsernames.includes(username);
-      
-      if (!usernameExists) {
-        // Also check in the global usernames list
-        const globalUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
-        if (!globalUsernames.includes(username)) {
-          setUserExists(false);
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-      setUserExists(true);
-      
-      // Get user's email from the username
-      const userEmail = Object.keys(usernameMappings).find(
-        email => usernameMappings[email] === username
-      );
-      
-      // Get user profile information if available
-      if (userEmail) {
-        const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
-        if (allUsers[userEmail]) {
-          setDisplayName(allUsers[userEmail].name || username);
-          setProfilePic(allUsers[userEmail].picture || null);
-        }
-      }
-      
-      // Load audio files for this user
-      try {
-        const storedAudioFiles = localStorage.getItem(`${username}_audioFiles`);
-        if (storedAudioFiles) {
-          const parsedFiles = JSON.parse(storedAudioFiles);
-          setAudioFiles(parsedFiles);
-        }
-      } catch (error) {
-        console.error("Error loading audio files:", error);
-      }
-      
+    // Update document title
+    document.title = username ? `@${username} - vzee.fun` : "Profile - vzee.fun";
+    
+    if (!username) {
       setIsLoading(false);
+      return;
+    }
+
+    const loadProfile = () => {
+      try {
+        // Get user profile info from all users map in localStorage
+        const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
+        const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
+        
+        // Find the email associated with this username
+        let userEmail = null;
+        for (const [email, mappedUsername] of Object.entries(usernameMappings)) {
+          if (mappedUsername === username) {
+            userEmail = email;
+            break;
+          }
+        }
+        
+        let userProfile: UserProfile = { username };
+        
+        // If we found their email, get their profile info
+        if (userEmail && allUsers[userEmail]) {
+          userProfile = {
+            ...userProfile,
+            name: allUsers[userEmail].name,
+            picture: allUsers[userEmail].picture
+          };
+        }
+        
+        setProfile(userProfile);
+        
+        // Load audio files
+        const storedAudios = localStorage.getItem(`${username}_audioFiles`);
+        if (storedAudios) {
+          const audioFiles = JSON.parse(storedAudios);
+          setAudioFiles(audioFiles);
+        }
+        
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error loading profile:", error);
+        setIsLoading(false);
+      }
     };
     
-    loadUserProfile();
+    loadProfile();
   }, [username]);
   
   if (isLoading) {
     return <Loading message="Loading profile..." />;
   }
   
-  if (!userExists) {
+  if (!profile) {
     return (
-      <div className="min-h-screen bg-darkBlack text-white p-4 md:p-8 flex flex-col items-center justify-center animate-fade-in">
-        <div className="text-center max-w-md">
-          <h1 className="text-3xl font-bold mb-2 text-premiumRed">User Not Found</h1>
-          <p className="text-lightGray mb-6">
-            The user profile you're looking for doesn't exist.
-          </p>
-          <Button 
-            onClick={() => navigate("/")}
-            className="bg-premiumRed hover:bg-premiumRed/90 text-white"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back Home
-          </Button>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-darkBlack text-white p-4 text-center">
+        <h1 className="text-3xl font-bold mb-4 text-premiumRed">Profile Not Found</h1>
+        <p className="text-lightGray mb-8">
+          The profile you're looking for doesn't exist.
+        </p>
+        <Button 
+          className="bg-premiumRed hover:bg-premiumRed/90 text-white"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Home
+        </Button>
       </div>
     );
   }
   
   return (
     <div className="min-h-screen bg-darkBlack text-white animate-fade-in">
-      <header className="h-40 bg-gradient-to-r from-premiumRed to-red-700 relative">
-        <div className="absolute top-4 left-4">
-          <Button 
-            variant="ghost" 
-            className="text-white bg-black/40 hover:bg-black/60" 
-            onClick={() => navigate(-1)}
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-        </div>
-      </header>
-      
-      <div className="container mx-auto px-4 pb-20">
-        <div className="relative -mt-16 mb-8 flex flex-col items-center">
-          {profilePic ? (
+      <div className="max-w-4xl mx-auto p-4">
+        <Button 
+          variant="ghost" 
+          className="text-lightGray mb-6" 
+          onClick={() => navigate(-1)}
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+        
+        <div className="flex flex-col items-center mb-10">
+          {profile.picture ? (
             <img 
-              src={profilePic} 
-              alt={username}
-              className="w-32 h-32 rounded-full border-4 border-darkBlack object-cover"
+              src={profile.picture} 
+              alt={`${profile.username}'s profile`} 
+              className="w-20 h-20 rounded-full mb-4 border-2 border-premiumRed"
             />
           ) : (
-            <div className="w-32 h-32 rounded-full bg-zinc-800 flex items-center justify-center border-4 border-darkBlack">
-              <User className="w-12 h-12 text-zinc-400" />
+            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center border-2 border-premiumRed mb-4">
+              <User className="w-10 h-10 text-lightGray" />
             </div>
           )}
           
-          <div className="mt-4 text-center">
-            <h1 className="text-2xl font-bold">@{username}</h1>
-            {displayName && displayName !== username && (
-              <p className="text-lightGray opacity-70 mt-1">{displayName}</p>
-            )}
-          </div>
+          {profile.name && (
+            <h1 className="text-2xl font-bold mb-1">{profile.name}</h1>
+          )}
           
-          <div className="flex gap-3 mt-4">
-            <Button
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-2"
-              onClick={copyProfileUrl}
-            >
-              <Copy className="w-4 h-4" /> Copy URL
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="flex items-center gap-2 bg-premiumRed hover:bg-premiumRed/90"
-              onClick={shareProfile}
-            >
-              <Share className="w-4 h-4" /> Share Profile
-            </Button>
-          </div>
+          <p className="text-lg font-medium text-premiumRed">@{profile.username}</p>
         </div>
         
-        <div className="mt-10">
-          <h2 className="text-xl font-bold mb-6">Audio Files</h2>
-          
-          {audioFiles.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {audioFiles.map((audio, index) => (
-                <AudioItem
-                  key={index}
-                  title={audio.title}
-                  username={username}
-                  audioFile={audio.file}
-                  audioURL={audio.audioURL}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-zinc-900/50 rounded-lg p-10 text-center">
-              <p className="text-zinc-400">No audio files uploaded yet</p>
-            </div>
-          )}
-        </div>
+        <h2 className="text-xl font-semibold mb-6 text-center">Audio Files</h2>
+        
+        {audioFiles.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {audioFiles.map((audio, index) => (
+              <AudioItem
+                key={index}
+                title={audio.title}
+                username={username || ""}
+                audioFile={audio.file}
+                audioURL={audio.audioURL}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center p-10 bg-muted bg-opacity-20 rounded-lg">
+            <p className="text-lightGray">No audio files shared yet</p>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default ProfilePage;
