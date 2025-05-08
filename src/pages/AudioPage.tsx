@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import Loading from "@/components/Loading";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { Helmet } from "react-helmet";
 
 interface AudioData {
   audioURL: string;
@@ -27,6 +26,9 @@ const AudioPage = () => {
       setIsLoading(false);
       return;
     }
+
+    // Update the document title
+    document.title = title ? `${title} - vzee.fun` : "Audio - vzee.fun";
 
     // Check if we have locally stored audio
     const storedAudios = localStorage.getItem(`${username}_audioFiles`);
@@ -67,12 +69,13 @@ const AudioPage = () => {
   }
   
   if (!exists || !audioData) {
+    // Update title for not found page
+    useEffect(() => {
+      document.title = "Audio Not Found - vzee.fun";
+    }, []);
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-darkBlack text-white p-4 text-center">
-        <Helmet>
-          <title>Audio Not Found - vzee.fun</title>
-          <meta name="description" content="The audio you're looking for doesn't exist or has been removed." />
-        </Helmet>
         <h1 className="text-3xl font-bold mb-4 text-premiumRed">Audio Not Found</h1>
         <p className="text-lightGray mb-8">
           The audio you're looking for doesn't exist or has been removed.

@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import AudioWaveform from "./AudioWaveform";
 import { Button } from "@/components/ui/button";
 import { Play, Pause, Volume2, VolumeX } from "lucide-react";
-import { Helmet } from "react-helmet";
 
 interface AudioPlayerProps {
   audioURL: string;
@@ -25,6 +24,9 @@ const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
   };
 
   useEffect(() => {
+    // Update the document title when component mounts
+    document.title = `${title} by @${username} - vzee.fun`;
+    
     // Create audio element
     const audio = new Audio(audioURL);
     audioRef.current = audio;
@@ -49,7 +51,7 @@ const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('ended', handleEnded);
     };
-  }, [audioURL]);
+  }, [audioURL, title, username]);
   
   const handleTimeUpdate = () => {
     if (audioRef.current) {
@@ -103,80 +105,71 @@ const AudioPlayer = ({ audioURL, title, username }: AudioPlayerProps) => {
   };
 
   return (
-    <>
-      <Helmet>
-        <title>{title} by @{username} - vzee.fun</title>
-        <meta name="description" content={`Listen to "${title}" shared by @${username} on vzee.fun`} />
-        <meta property="og:title" content={`${title} by @${username} - vzee.fun`} />
-        <meta property="og:description" content={`Listen to "${title}" shared by @${username} on vzee.fun`} />
-      </Helmet>
-      
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-darkBlack text-white">
-        <div className="w-full max-w-lg px-6 py-10">
-          <div className="text-center mb-10">
-            <h1 className="text-3xl font-bold mb-2 text-premiumRed">{title}</h1>
-            <p className="text-lightGray opacity-70">@{username}</p>
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-darkBlack text-white">
+      <div className="w-full max-w-lg px-6 py-10">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold mb-2 text-premiumRed">{title}</h1>
+          <p className="text-lightGray opacity-70">@{username}</p>
+        </div>
+        
+        <div className="space-y-6">
+          {/* Main waveform - large size */}
+          <div className="flex justify-center">
+            <AudioWaveform 
+              isPlaying={isPlaying} 
+              barCount={60} 
+              className="h-32" 
+            />
           </div>
           
-          <div className="space-y-6">
-            {/* Main waveform - large size */}
-            <div className="flex justify-center">
-              <AudioWaveform 
-                isPlaying={isPlaying} 
-                barCount={60} 
-                className="h-32" 
-              />
-            </div>
-            
-            {/* Progress bar */}
+          {/* Progress bar */}
+          <div 
+            className="h-1.5 bg-zinc-800 rounded-full overflow-hidden cursor-pointer"
+            onClick={handleProgressClick}
+          >
             <div 
-              className="h-1.5 bg-zinc-800 rounded-full overflow-hidden cursor-pointer"
-              onClick={handleProgressClick}
+              className="h-full bg-premiumRed"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+          
+          {/* Time display */}
+          <div className="flex justify-between text-xs text-zinc-400">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+          
+          {/* Controls */}
+          <div className="flex justify-center items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-12 h-12 rounded-full bg-premiumRed text-white hover:bg-opacity-80"
+              onClick={togglePlayPause}
             >
-              <div 
-                className="h-full bg-premiumRed"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
+              {isPlaying ? (
+                <Pause className="h-6 w-6" />
+              ) : (
+                <Play className="h-6 w-6 ml-1" />
+              )}
+            </Button>
             
-            {/* Time display */}
-            <div className="flex justify-between text-xs text-zinc-400">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
-            
-            {/* Controls */}
-            <div className="flex justify-center items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-12 h-12 rounded-full bg-premiumRed text-white hover:bg-opacity-80"
-                onClick={togglePlayPause}
-              >
-                {isPlaying ? (
-                  <Pause className="h-6 w-6" />
-                ) : (
-                  <Play className="h-6 w-6 ml-1" />
-                )}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                className="rounded-full text-zinc-400 hover:text-white"
-                onClick={toggleMute}
-              >
-                {isMuted ? (
-                  <VolumeX className="h-5 w-5" />
-                ) : (
-                  <Volume2 className="h-5 w-5" />
-                )}
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-zinc-400 hover:text-white"
+              onClick={toggleMute}
+            >
+              {isMuted ? (
+                <VolumeX className="h-5 w-5" />
+              ) : (
+                <Volume2 className="h-5 w-5" />
+              )}
+            </Button>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
