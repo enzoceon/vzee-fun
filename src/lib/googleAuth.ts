@@ -1,6 +1,4 @@
 
-import { useToast } from "@/hooks/use-toast";
-
 // Google Authentication configuration
 const GOOGLE_CLIENT_ID = "763178151866-bft0v9p1q4vmekfg0btrc4c3isi58r0t.apps.googleusercontent.com";
 const GOOGLE_SCOPES = "email profile";
@@ -15,7 +13,7 @@ interface GoogleUser {
 
 // Initialize Google Auth
 export const initializeGoogleAuth = (): Promise<void> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     // Check if the Google API script is already loaded
     if (document.getElementById("google-auth-script")) {
       resolve();
@@ -29,6 +27,7 @@ export const initializeGoogleAuth = (): Promise<void> => {
     script.async = true;
     script.defer = true;
     script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Google authentication script"));
 
     // Add the script to the document
     document.head.appendChild(script);
@@ -74,7 +73,7 @@ export const authenticateWithGoogle = (): Promise<GoogleUser> => {
 
     // Display the Google Sign-In button
     window.google.accounts.id.prompt((notification: any) => {
-      if (notification.isNotDisplayed()) {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
         // Fallback to render a custom button
         window.google.accounts.id.renderButton(
           document.getElementById("google-signin-button") || document.createElement("div"),
@@ -88,8 +87,10 @@ export const authenticateWithGoogle = (): Promise<GoogleUser> => {
 // Function to sign out
 export const signOut = (): void => {
   localStorage.removeItem('vzeeUser');
+  localStorage.removeItem('vzeeUsername');
   if (window.google) {
     window.google.accounts.id.disableAutoSelect();
+    window.google.accounts.id.revoke();
   }
 };
 

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,17 +12,32 @@ interface AuthProps {
 const Auth = ({ onAuthenticated }: AuthProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { toast } = useToast();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // Initialize Google Auth on component mount
-    initializeGoogleAuth().catch(error => {
-      console.error("Failed to initialize Google authentication:", error);
-      toast({
-        title: "Authentication Error",
-        description: "Failed to load Google authentication",
-        variant: "destructive",
-      });
-    });
+    const initGoogle = async () => {
+      try {
+        await initializeGoogleAuth();
+        
+        // Once initialized, render the Google button
+        if (window.google && googleButtonRef.current) {
+          window.google.accounts.id.renderButton(
+            googleButtonRef.current,
+            { theme: "outline", size: "large", width: 220, text: "continue_with" }
+          );
+        }
+      } catch (error) {
+        console.error("Failed to initialize Google authentication:", error);
+        toast({
+          title: "Authentication Error",
+          description: "Failed to load Google authentication",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    initGoogle();
   }, [toast]);
   
   const handleGoogleLogin = async () => {
@@ -52,16 +67,24 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
         Upload your audio and get a unique link to share. Your audio will autoplay when someone visits your link.
       </p>
       
-      <Button
-        onClick={handleGoogleLogin}
-        disabled={isAuthenticating}
-        className="btn-premium flex items-center gap-2 min-w-[220px] justify-center"
-        id="google-signin-button" // This div will be used by Google's renderButton
-      >
-        {isAuthenticating ? (
+      {isAuthenticating ? (
+        <Button disabled className="btn-premium flex items-center gap-2 min-w-[220px] justify-center">
           <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-        ) : (
-          <>
+          Authenticating...
+        </Button>
+      ) : (
+        <>
+          <div 
+            ref={googleButtonRef}
+            id="google-signin-button"
+            className="min-w-[220px] mb-4"
+            onClick={handleGoogleLogin}
+          ></div>
+          
+          <Button
+            onClick={handleGoogleLogin}
+            className="btn-premium flex items-center gap-2 min-w-[220px] justify-center"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" className="w-5 h-5">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
@@ -70,9 +93,9 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
               <path d="M1 1h22v22H1z" fill="none" />
             </svg>
             Continue with Google <ArrowRight className="w-4 h-4" />
-          </>
-        )}
-      </Button>
+          </Button>
+        </>
+      )}
     </div>
   );
 };
