@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -12,12 +12,21 @@ interface AuthProps {
 const Auth = ({ onAuthenticated }: AuthProps) => {
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const { toast } = useToast();
+  const googleButtonRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     // Initialize Google Auth on component mount
     const initGoogle = async () => {
       try {
         await initializeGoogleAuth();
+        
+        // Once initialized, render the Google button
+        if (window.google && googleButtonRef.current) {
+          window.google.accounts.id.renderButton(
+            googleButtonRef.current,
+            { theme: "outline", size: "large", width: 220, text: "continue_with" }
+          );
+        }
       } catch (error) {
         console.error("Failed to initialize Google authentication:", error);
         toast({
@@ -66,8 +75,10 @@ const Auth = ({ onAuthenticated }: AuthProps) => {
       ) : (
         <>
           <div 
+            ref={googleButtonRef}
             id="google-signin-button"
             className="min-w-[220px] mb-4"
+            onClick={handleGoogleLogin}
           ></div>
           
           <Button

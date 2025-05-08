@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { User } from "lucide-react";
 import { HeartHandshake } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,8 @@ interface UserProfile {
 }
 
 const ProfilePage = () => {
-  const { username: urlUsername } = useParams<{ username: string }>();
-  const navigate = useNavigate();
-  let cleanUsername = urlUsername?.startsWith('@') ? urlUsername.substring(1) : urlUsername;
+  const { username } = useParams<{ username: string }>();
+  const cleanUsername = username?.startsWith('@') ? username.substring(1) : username;
   
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -106,17 +105,6 @@ const ProfilePage = () => {
     setLoading(false);
   }, [cleanUsername]);
 
-  const handleDeleteAudio = (title: string) => {
-    if (!userProfile?.username) return;
-    
-    // Filter out the deleted audio file
-    const updatedAudioFiles = audioFiles.filter(file => file.title !== title);
-    setAudioFiles(updatedAudioFiles);
-    
-    // Update localStorage
-    localStorage.setItem(`${userProfile.username}_audioFiles`, JSON.stringify(updatedAudioFiles));
-  };
-
   if (loading) {
     return <Loading message="Loading profile..." />;
   }
@@ -190,7 +178,6 @@ const ProfilePage = () => {
                 username={userProfile?.username || ''}
                 audioFile={audio.file}
                 audioURL={audio.audioURL}
-                onDelete={handleDeleteAudio}
               />
             ))}
           </div>

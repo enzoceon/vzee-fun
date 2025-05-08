@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import AudioPlayer from "@/components/AudioPlayer";
 import { useEffect, useState } from "react";
@@ -43,23 +42,22 @@ const AudioPage = () => {
           // For re-creating audio URLs that may have been lost between sessions
           let audioURL = foundAudio.audioURL;
           
-          // If the URL is no longer valid or doesn't exist, recreate it
-          if (!audioURL || audioURL.startsWith('blob:')) {
+          // If the URL is no longer valid (after page refresh, etc.), try to recreate it
+          if (foundAudio.file && (!audioURL || audioURL.startsWith('blob:'))) {
             try {
-              // Recreate a blob URL from the file data
-              if (foundAudio.file) {
-                // Try to reconstruct the file from the stored data
-                const fileData = foundAudio.file;
-                // Create a placeholder file with correct metadata
-                const file = new File(
-                  [new Blob([new ArrayBuffer(1024)])], // Create a small buffer as placeholder
-                  fileData.name || 'audio.mp3',
-                  { type: fileData.type || 'audio/mpeg' }
-                );
-                audioURL = URL.createObjectURL(file);
-              }
+              // Convert file object back to real File
+              const fileData = foundAudio.file;
+              const file = new File(
+                [new Blob(['audio placeholder'])], // We can't fully recreate the file data from localStorage
+                fileData.name || 'audio.mp3',
+                { type: fileData.type || 'audio/mpeg' }
+              );
+              
+              // Create new URL
+              audioURL = URL.createObjectURL(file);
             } catch (error) {
               console.error("Error recreating audio URL:", error);
+              // Keep using the existing URL if recreation fails
             }
           }
           
@@ -78,53 +76,8 @@ const AudioPage = () => {
         setExists(false);
       }
     } else {
-      // Check all users' audio files as well
-      const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
-      
-      let foundAudio = null;
-      for (const storedUsername of allUsernames) {
-        const userAudios = localStorage.getItem(`${storedUsername}_audioFiles`);
-        if (userAudios) {
-          try {
-            const audioFiles = JSON.parse(userAudios);
-            foundAudio = audioFiles.find((audio: any) => audio.title === title);
-            if (foundAudio) {
-              // For recreating audio URLs that may have been lost
-              let audioURL = foundAudio.audioURL;
-              if (!audioURL || audioURL.startsWith('blob:')) {
-                try {
-                  if (foundAudio.file) {
-                    const fileData = foundAudio.file;
-                    const file = new File(
-                      [new Blob([new ArrayBuffer(1024)])],
-                      fileData.name || 'audio.mp3',
-                      { type: fileData.type || 'audio/mpeg' }
-                    );
-                    audioURL = URL.createObjectURL(file);
-                  }
-                } catch (error) {
-                  console.error("Error recreating audio URL:", error);
-                }
-              }
-              
-              setExists(true);
-              setAudioData({
-                audioURL: audioURL,
-                title: foundAudio.title,
-                username: storedUsername,
-                file: foundAudio.file
-              });
-              break;
-            }
-          } catch (error) {
-            console.error("Error parsing stored audio data:", error);
-          }
-        }
-      }
-      
-      if (!foundAudio) {
-        setExists(false);
-      }
+      // No locally stored audio found
+      setExists(false);
     }
     
     setIsLoading(false);

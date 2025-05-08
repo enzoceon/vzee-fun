@@ -130,10 +130,10 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     }
     
     // Rename user's audio files in localStorage if they exist
-    const oldAudioFiles = localStorage.getItem(`${username}_audioFiles`);
+    const oldAudioFiles = localStorage.getItem(`${initialUsername}_audioFiles`);
     if (oldAudioFiles) {
       localStorage.setItem(`${newUsername}_audioFiles`, oldAudioFiles);
-      localStorage.removeItem(`${username}_audioFiles`);
+      localStorage.removeItem(`${initialUsername}_audioFiles`);
     }
     
     setIsChangingUsername(false);
