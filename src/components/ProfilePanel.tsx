@@ -2,7 +2,7 @@
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, User, LogOut, Check } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProfilePanelProps {
   username: string;
@@ -16,6 +16,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   const [isChangingUsername, setIsChangingUsername] = useState(false);
   const [newUsername, setNewUsername] = useState(initialUsername);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,21 +44,56 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
   const toggleChangeUsername = () => {
     setIsChangingUsername(!isChangingUsername);
     setNewUsername(username);
+    setError(null);
+  };
+  
+  const validateUsername = (value: string) => {
+    if (!value || value.trim() === '') {
+      return "Username cannot be empty";
+    }
+    
+    if (value.length < 3) {
+      return "Username must be at least 3 characters";
+    }
+    
+    if (value.length > 20) {
+      return "Username must be less than 20 characters";
+    }
+    
+    if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+      return "Username can only contain letters, numbers, underscores and dashes";
+    }
+    
+    return null;
+  };
+  
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewUsername(value);
+    setError(validateUsername(value));
   };
   
   const saveUsername = () => {
-    if (!newUsername || newUsername.trim() === '') {
-      toast({
-        variant: "destructive",
-        description: "Username cannot be empty",
-      });
+    const validationError = validateUsername(newUsername);
+    if (validationError) {
+      setError(validationError);
       return;
     }
     
     setIsSubmitting(true);
+    setError(null);
     
     // Simulate API call to check username availability and save
     setTimeout(() => {
+      // Simulate username taken check (randomly)
+      const isTaken = newUsername === "admin" || newUsername === "test" || Math.random() > 0.8;
+      
+      if (isTaken) {
+        setError("This username is already taken");
+        setIsSubmitting(false);
+        return;
+      }
+      
       setUsername(newUsername);
       setIsChangingUsername(false);
       setIsSubmitting(false);
@@ -102,12 +138,17 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                     <input 
                       type="text"
                       value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
+                      onChange={handleUsernameChange}
                       className="bg-transparent border-none outline-none text-lightGray font-medium"
                       placeholder="username"
+                      autoFocus
                     />
                   </div>
                 </div>
+                
+                {error && (
+                  <p className="text-sm text-premiumRed">{error}</p>
+                )}
                 
                 <div className="flex gap-2">
                   <Button 
@@ -123,7 +164,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
                     size="sm" 
                     onClick={saveUsername}
                     className="flex-1 bg-premiumRed hover:bg-premiumRed/90"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !!error}
                   >
                     {isSubmitting ? (
                       <span className="flex items-center">

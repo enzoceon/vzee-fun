@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, User, X } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { Menu, User, X, ChevronDown, ChevronRight } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import ProfilePanel from "./ProfilePanel";
 import {
   Sheet,
@@ -11,6 +11,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger
+} from "@/components/ui/collapsible";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   username: string;
@@ -19,8 +25,9 @@ interface HeaderProps {
 const Header = ({ username }: HeaderProps) => {
   const [showPanel, setShowPanel] = useState(false);
   const { toast } = useToast();
-  
-  // Header is always visible now - removed visibility state
+  const navigate = useNavigate();
+  const [legalOpen, setLegalOpen] = useState(false);
+  const [supportOpen, setSupportOpen] = useState(false);
   
   const toggleProfilePanel = () => {
     setShowPanel(!showPanel);
@@ -42,30 +49,64 @@ const Header = ({ username }: HeaderProps) => {
               </SheetHeader>
               <div className="mt-6 flex flex-col gap-4">
                 <nav className="flex flex-col gap-2">
-                  <a 
-                    href="/terms" 
-                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
+                  
+                  {/* Support Section */}
+                  <Collapsible 
+                    open={supportOpen} 
+                    onOpenChange={setSupportOpen}
+                    className="w-full"
                   >
-                    Terms and Conditions
-                  </a>
-                  <a 
-                    href="/privacy" 
-                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
+                    <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50">
+                      <span>Support</span>
+                      {supportOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4">
+                      <a 
+                        href="/contact" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Contact Us
+                      </a>
+                    </CollapsibleContent>
+                  </Collapsible>
+                  
+                  {/* Legal Section */}
+                  <Collapsible 
+                    open={legalOpen} 
+                    onOpenChange={setLegalOpen}
+                    className="w-full"
                   >
-                    Privacy Policy
-                  </a>
-                  <a 
-                    href="/disclaimer" 
-                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
-                  >
-                    Disclaimer
-                  </a>
-                  <a 
-                    href="/copyright" 
-                    className="text-lightGray hover:text-premiumRed transition-colors px-2 py-1.5 rounded-md hover:bg-gray-800/50"
-                  >
-                    Copyright Policy
-                  </a>
+                    <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50">
+                      <span>Legal</span>
+                      {legalOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-4">
+                      <a 
+                        href="/terms" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Terms and Conditions
+                      </a>
+                      <a 
+                        href="/privacy" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Privacy Policy
+                      </a>
+                      <a 
+                        href="/disclaimer" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Disclaimer
+                      </a>
+                      <a 
+                        href="/cookie-policy" 
+                        className="block py-2 px-2 text-lightGray hover:text-premiumRed transition-colors rounded-md hover:bg-gray-800/50"
+                      >
+                        Cookie Policy
+                      </a>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </nav>
               </div>
             </SheetContent>
