@@ -1,4 +1,3 @@
-
 import { useRef, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X, User, LogOut, Check, HeartHandshake, UserCheck, AlertTriangle, Loader2, Copy, Share } from "lucide-react";
@@ -175,25 +174,33 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setError(null);
     
     try {
-      // Save to Supabase first
+      // Check if the username is available first
+      if (username !== newUsername) {
+        const { data: existingUser, error: checkError } = await supabase
+          .from('user_profiles')
+          .select('username')
+          .eq('username', newUsername)
+          .maybeSingle();
+          
+        if (existingUser) {
+          setError("Username is already taken");
+          setIsSubmitting(false);
+          return;
+        }
+        
+        if (checkError && checkError.code !== 'PGRST116') {
+          console.error("Error checking username:", checkError);
+        }
+      }
+      
+      // Get current user for updating
       const user = getCurrentUser();
       if (!user?.email) {
         throw new Error("User email not found");
       }
       
-      // Check if a profile already exists for this user or username
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('username', username)
-        .single();
-        
-      if (checkError && checkError.code !== 'PGRST116') {
-        console.error("Error checking existing profile:", checkError);
-        throw new Error("Failed to check existing profile");
-      }
-      
-      if (existingProfile) {
+      // If changing from existing username
+      if (username) {
         // Update existing profile
         const { error: updateError } = await supabase
           .from('user_profiles')
@@ -209,7 +216,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
           throw new Error("Failed to update profile");
         }
       } else {
-        // Insert new profile
+        // Insert new profile if first time
         const { error: insertError } = await supabase
           .from('user_profiles')
           .insert({ 

@@ -63,14 +63,14 @@ const Dashboard = ({ username }: DashboardProps) => {
   // Function to handle audio upload completion
   const handleUploadComplete = async (title: string, file: File, audioURL: string) => {
     try {
-      console.log("Uploading audio:", { title, username, audioURL });
+      console.log("Processing audio upload:", { title, username });
       
       // Save to Supabase
       const { data, error } = await supabase
         .from('audio_uploads')
         .insert({
-          username: username,
-          title: title,
+          username,
+          title,
           audio_url: audioURL
         })
         .select()
@@ -88,9 +88,7 @@ const Dashboard = ({ username }: DashboardProps) => {
       const newAudioFile: AudioFile = { 
         id: data.id,
         title, 
-        file, 
         audio_url: audioURL,
-        audioURL,
         created_at: data.created_at
       };
       

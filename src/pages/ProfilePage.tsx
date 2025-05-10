@@ -23,6 +23,7 @@ interface AudioFile {
 
 const ProfilePage = () => {
   const { username: rawUsername } = useParams<{ username: string }>();
+  // Fix username parsing - remove @ if present
   const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
   const [isLoading, setIsLoading] = useState(true);
@@ -42,11 +43,12 @@ const ProfilePage = () => {
     const loadProfile = async () => {
       try {
         setIsLoading(true);
+        console.log("Loading profile for:", username);
         
         // Fetch user profile from Supabase
         const { data: profileData, error: profileError } = await supabase
           .from('user_profiles')
-          .select('*')
+          .select('username, display_name, picture_url')
           .eq('username', username)
           .maybeSingle();
         
@@ -56,6 +58,8 @@ const ProfilePage = () => {
           setIsLoading(false);
           return;
         }
+        
+        console.log("Profile data:", profileData);
         
         if (!profileData) {
           console.log("No profile found for username:", username);
@@ -74,7 +78,7 @@ const ProfilePage = () => {
         // Fetch audio files from Supabase
         const { data: audioData, error: audioError } = await supabase
           .from('audio_uploads')
-          .select('*')
+          .select('id, title, audio_url, created_at')
           .eq('username', username)
           .order('created_at', { ascending: false });
         
@@ -82,6 +86,7 @@ const ProfilePage = () => {
           console.error("Error fetching audio files:", audioError);
           setAudioFiles([]);
         } else {
+          console.log("Audio files:", audioData);
           setAudioFiles(audioData || []);
         }
         

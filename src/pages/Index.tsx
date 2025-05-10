@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import Auth from "@/components/Auth";
 import UsernameSetup from "@/components/UsernameSetup";
@@ -37,81 +38,91 @@ const Index = () => {
         
         if (user?.email) {
           try {
-            console.log("Checking for username in Supabase");
-            // First try to get username from Supabase by user's email
-            const { data, error } = await supabase
+            // First try to get username from Supabase by user's display name
+            console.log("Checking for username in Supabase with display_name:", user.name);
+            const { data: profileByName, error: nameError } = await supabase
               .from('user_profiles')
               .select('username')
               .eq('display_name', user.name)
               .maybeSingle();
               
-            console.log("Supabase profile lookup result:", { data, error });
+            console.log("Supabase profile lookup by name result:", { profileByName, nameError });
               
-            if (data && !error) {
-              console.log("Found username in Supabase:", data.username);
-              setUsername(data.username);
-              // Also save to localStorage for legacy support
-              localStorage.setItem('vzeeUsername', data.username);
-              // And store the email-username mapping
-              storeUsernameWithEmail(user.email, data.username);
+            if (profileByName?.username) {
+              console.log("Found username in Supabase by display_name:", profileByName.username);
+              setUsername(profileByName.username);
+              storeUsernameWithEmail(user.email, profileByName.username);
+              localStorage.setItem('vzeeUsername', profileByName.username);
             } else {
-              console.log("Checking for username in local storage");
-              // If not in Supabase, check for username mapped to this email
+              // Try with email check in local storage
+              console.log("Checking for username mapped to email:", user.email);
               const userUsername = getUsernameByEmail(user.email);
               console.log("Username from email mapping:", userUsername);
               
               if (userUsername) {
                 console.log("Using username from email mapping:", userUsername);
                 setUsername(userUsername);
-                // Also ensure it's saved to localStorage for legacy support
                 localStorage.setItem('vzeeUsername', userUsername);
                 
-                // Try to save to Supabase for future use
-                console.log("Saving username to Supabase:", userUsername);
-                await supabase
+                // Check if already in Supabase
+                const { data: existingProfile, error: checkError } = await supabase
                   .from('user_profiles')
-                  .upsert({
-                    username: userUsername,
-                    display_name: user.name,
-                    picture_url: user.picture
-                  })
-                  .then(({ error: saveError }) => {
-                    if (saveError) {
-                      console.error("Error saving profile to Supabase:", saveError);
-                    } else {
-                      console.log("Profile saved to Supabase successfully");
-                    }
-                  });
+                  .select('username')
+                  .eq('username', userUsername)
+                  .maybeSingle();
+                
+                // If not in Supabase, save to Supabase for future use
+                if (!existingProfile && (!checkError || checkError.code === 'PGRST116')) {
+                  console.log("Saving username to Supabase:", userUsername);
+                  const { error: saveError } = await supabase
+                    .from('user_profiles')
+                    .insert({
+                      username: userUsername,
+                      display_name: user.name,
+                      picture_url: user.picture
+                    });
+                    
+                  if (saveError) {
+                    console.error("Error saving profile to Supabase:", saveError);
+                  } else {
+                    console.log("Profile saved to Supabase successfully");
+                  }
+                }
               } else {
+                // Fall back to localStorage
                 console.log("Checking for fallback in localStorage");
-                // Check for fallback in localStorage (legacy support)
                 const savedUsername = localStorage.getItem('vzeeUsername');
                 console.log("Username from localStorage:", savedUsername);
                 
                 if (savedUsername) {
                   console.log("Using username from localStorage:", savedUsername);
                   setUsername(savedUsername);
-                  // Store this username with the user's email for persistence
                   storeUsernameWithEmail(user.email, savedUsername);
                   
-                  // Try to save to Supabase for future use
-                  console.log("Saving username from localStorage to Supabase:", savedUsername);
-                  await supabase
+                  // Check if already in Supabase
+                  const { data: existingProfile, error: checkError } = await supabase
                     .from('user_profiles')
-                    .upsert({
-                      username: savedUsername,
-                      display_name: user.name,
-                      picture_url: user.picture
-                    })
-                    .then(({ error: saveError }) => {
-                      if (saveError) {
-                        console.error("Error saving profile to Supabase:", saveError);
-                      } else {
-                        console.log("Profile saved to Supabase successfully");
-                      }
-                    });
-                } else {
-                  console.log("No username found anywhere");
+                    .select('username')
+                    .eq('username', savedUsername)
+                    .maybeSingle();
+                  
+                  // If not in Supabase, save to Supabase for future use
+                  if (!existingProfile && (!checkError || checkError.code === 'PGRST116')) {
+                    console.log("Saving username from localStorage to Supabase:", savedUsername);
+                    const { error: saveError } = await supabase
+                      .from('user_profiles')
+                      .insert({
+                        username: savedUsername,
+                        display_name: user.name,
+                        picture_url: user.picture
+                      });
+                      
+                    if (saveError) {
+                      console.error("Error saving profile to Supabase:", saveError);
+                    } else {
+                      console.log("Profile saved to Supabase successfully");
+                    }
+                  }
                 }
               }
             }

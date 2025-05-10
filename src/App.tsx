@@ -24,7 +24,10 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          {/* Fix routing for usernames with @ prefix */}
           <Route path="/@:username" element={<ProfilePage />} />
+          <Route path="/@:username/:title" element={<AudioPage />} />
+          {/* Support URLs both with and without @ */}
           <Route path="/:username/:title" element={<AudioPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

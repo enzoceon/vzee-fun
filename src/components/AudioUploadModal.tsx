@@ -17,7 +17,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [titleAvailable, setTitleAvailable] = useState<boolean | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
+  const [isChecking, setIsChecking] = useState(isChecking);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const { toast: toastHook } = useToast();
@@ -90,22 +90,42 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     setIsUploading(true);
     
     try {
-      console.log("Starting audio upload process");
-      // Create a stable, unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${username}/${title}.${fileExt}`;
-      console.log("Generated filename:", fileName);
-      
-      // Convert file to object URL
-      const audioURL = URL.createObjectURL(file);
-      console.log("Created object URL:", audioURL);
-      
-      // Complete the upload by calling the parent callback
-      onUploadComplete(title, file, audioURL);
-      setIsUploading(false);
-      onClose();
-      
-      toast.success("Upload successful!");
+      // Generate a data URL from the file
+      return new Promise<void>((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = async (event) => {
+          if (!event.target?.result) {
+            toast.error("Failed to read file");
+            setIsUploading(false);
+            reject("Failed to read file");
+            return;
+          }
+          
+          const audioURL = event.target.result as string;
+          console.log("Created audio data URL");
+          
+          try {
+            // Call parent callback to complete upload
+            onUploadComplete(title, file, audioURL);
+            setIsUploading(false);
+            onClose();
+            resolve();
+          } catch (error) {
+            console.error("Error in upload completion:", error);
+            setIsUploading(false);
+            reject(error);
+          }
+        };
+        
+        reader.onerror = () => {
+          toast.error("Error reading file");
+          setIsUploading(false);
+          reject("Error reading file");
+        };
+        
+        reader.readAsDataURL(file);
+      });
     } catch (error) {
       console.error("Upload error:", error);
       setIsUploading(false);
