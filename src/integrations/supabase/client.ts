@@ -16,3 +16,20 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage
   }
 });
+
+// Enable Row Level Security (RLS) on all Supabase tables
+export const enableRLS = async () => {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      // Set the Auth header for all requests
+      supabase.rest.headers.common['Authorization'] = `Bearer ${session.access_token}`;
+    }
+  } catch (error) {
+    console.error("Error enabling RLS:", error);
+  }
+};
+
+// Call enableRLS on app startup
+enableRLS();
+

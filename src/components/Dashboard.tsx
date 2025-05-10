@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Header from "./Header";
 import AudioItem from "./AudioItem";
@@ -33,6 +32,8 @@ const Dashboard = ({ username }: DashboardProps) => {
   useEffect(() => {
     const fetchAudioFiles = async () => {
       try {
+        console.log("Fetching audio files for username:", username);
+        
         const { data, error } = await supabase
           .from('audio_uploads')
           .select('*')
@@ -42,47 +43,29 @@ const Dashboard = ({ username }: DashboardProps) => {
         if (error) {
           console.error("Error fetching audio files:", error);
           toast.error("Failed to load your audio files");
-          
-          // Fallback to localStorage
-          const savedAudioFiles = localStorage.getItem(`${username}_audioFiles`);
-          if (savedAudioFiles) {
-            try {
-              const parsedFiles = JSON.parse(savedAudioFiles);
-              setAudioFiles(parsedFiles);
-              
-              // If we have audio files, switch to audio tab
-              if (parsedFiles && parsedFiles.length > 0) {
-                setActiveTab("audio");
-              }
-            } catch (error) {
-              console.error("Error loading saved audio files:", error);
-            }
-          }
         } else if (data && data.length > 0) {
+          console.log("Fetched audio files:", data);
           setAudioFiles(data);
           setActiveTab("audio");
+        } else {
+          console.log("No audio files found for username:", username);
         }
       } catch (error) {
         console.error("Error loading audio files:", error);
       }
     };
     
-    fetchAudioFiles();
+    if (username) {
+      fetchAudioFiles();
+    }
   }, [username, toastHook]);
   
-  // Function to convert blob to data URI for storage
-  function blobToDataURI(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = (e) => reject(e);
-      reader.readAsDataURL(blob);
-    });
-  }
-  
+  // Function to handle audio upload completion
   const handleUploadComplete = async (title: string, file: File, audioURL: string) => {
     try {
-      // Save to Supabase first
+      console.log("Uploading audio:", { title, username, audioURL });
+      
+      // Save to Supabase
       const { data, error } = await supabase
         .from('audio_uploads')
         .insert({
@@ -99,45 +82,33 @@ const Dashboard = ({ username }: DashboardProps) => {
         return;
       }
       
-      // Also save to localStorage as backup
-      try {
-        // Convert file to data URI for storage
-        const blobData = await blobToDataURI(file);
-        
-        const newAudioFile: AudioFile = { 
-          id: data.id,
-          title, 
-          file, 
-          audio_url: audioURL,
-          audioURL,
-          created_at: data.created_at
-        };
-        
-        const updatedFiles = [...audioFiles, newAudioFile];
-        
-        // Save to localStorage
-        localStorage.setItem(`${username}_audioFiles`, JSON.stringify(updatedFiles));
-        
-        // Update state
-        setAudioFiles(updatedFiles);
-        setActiveTab("audio"); // Switch to audio tab after upload
-        
-        toast.success("Audio uploaded successfully!");
-      } catch (localError) {
-        console.error("Error saving to localStorage:", localError);
-        
-        // Still update the state with Supabase data
-        setAudioFiles([...audioFiles, data]);
-        setActiveTab("audio");
-      }
+      console.log("Audio saved to Supabase:", data);
+      
+      // Update state with new audio file
+      const newAudioFile: AudioFile = { 
+        id: data.id,
+        title, 
+        file, 
+        audio_url: audioURL,
+        audioURL,
+        created_at: data.created_at
+      };
+      
+      setAudioFiles(prevFiles => [newAudioFile, ...prevFiles]);
+      setActiveTab("audio"); // Switch to audio tab after upload
+      
+      toast.success("Audio uploaded successfully!");
     } catch (error) {
       console.error("Error in upload process:", error);
       toast.error("Upload failed. Please try again.");
     }
   };
   
+  // Function to handle audio deletion
   const handleDeleteAudio = async (titleToDelete: string) => {
     try {
+      console.log("Deleting audio:", titleToDelete);
+      
       // Delete from Supabase
       const { error } = await supabase
         .from('audio_uploads')
@@ -152,15 +123,7 @@ const Dashboard = ({ username }: DashboardProps) => {
       }
       
       // Update local state
-      const updatedFiles = audioFiles.filter(audio => audio.title !== titleToDelete);
-      setAudioFiles(updatedFiles);
-      
-      // Update localStorage
-      try {
-        localStorage.setItem(`${username}_audioFiles`, JSON.stringify(updatedFiles));
-      } catch (localError) {
-        console.error("Error updating localStorage:", localError);
-      }
+      setAudioFiles(prevFiles => prevFiles.filter(audio => audio.title !== titleToDelete));
       
       toast.success("Audio deleted successfully");
     } catch (error) {
@@ -186,7 +149,7 @@ const Dashboard = ({ username }: DashboardProps) => {
       </div>
     );
   };
-
+  
   const renderAudioTab = () => {
     if (audioFiles.length === 0) {
       return (
@@ -209,7 +172,7 @@ const Dashboard = ({ username }: DashboardProps) => {
                 title={audio.title}
                 username={username}
                 audioURL={audio.audio_url || audio.audioURL || ""}
-                audioFile={audio.file} // Pass the file if available
+                audioFile={audio.file} // This is now optional so no TypeScript error
                 onDelete={handleDeleteAudio}
               />
             ))}

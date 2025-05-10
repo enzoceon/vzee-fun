@@ -14,6 +14,7 @@ interface AudioData {
 
 const AudioPage = () => {
   const { username: rawUsername, title } = useParams<{ username: string; title: string }>();
+  // Fix username parsing - remove @ if present
   const username = rawUsername?.startsWith('@') ? rawUsername.substring(1) : rawUsername;
   
   const [audioData, setAudioData] = useState<AudioData | null>(null);
@@ -29,13 +30,17 @@ const AudioPage = () => {
       }
 
       try {
+        console.log(`Fetching audio for username: ${username}, title: ${title}`);
+        
         // Fetch audio from Supabase
         const { data, error } = await supabase
           .from('audio_uploads')
-          .select('*')
+          .select('title, audio_url')
           .eq('username', username)
           .eq('title', title)
           .maybeSingle();
+        
+        console.log("Supabase response:", { data, error });
         
         if (error) {
           console.error("Error fetching audio:", error);
@@ -49,6 +54,7 @@ const AudioPage = () => {
           // Update document title
           document.title = `${data.title} by @${username} - vzee.fun`;
         } else {
+          console.log("No audio data found for the specified username and title");
           setNotFound(true);
         }
       } catch (error) {

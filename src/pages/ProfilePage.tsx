@@ -48,10 +48,17 @@ const ProfilePage = () => {
           .from('user_profiles')
           .select('*')
           .eq('username', username)
-          .single();
+          .maybeSingle();
         
         if (profileError) {
           console.error("Profile fetch error:", profileError);
+          setProfile(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        if (!profileData) {
+          console.log("No profile found for username:", username);
           setProfile(null);
           setIsLoading(false);
           return;
@@ -124,7 +131,7 @@ const ProfilePage = () => {
         </Button>
         
         <div className="flex flex-col items-center mb-10">
-          {profile.picture_url ? (
+          {profile?.picture_url ? (
             <img 
               src={profile.picture_url} 
               alt={`${profile.username}'s profile`} 
@@ -136,11 +143,11 @@ const ProfilePage = () => {
             </div>
           )}
           
-          {profile.display_name && (
+          {profile?.display_name && (
             <h1 className="text-2xl font-bold mb-1">{profile.display_name}</h1>
           )}
           
-          <p className="text-lg font-medium text-premiumRed">@{profile.username}</p>
+          <p className="text-lg font-medium text-premiumRed">@{profile?.username}</p>
         </div>
         
         <h2 className="text-xl font-semibold mb-6 text-center">Audio Files</h2>
@@ -153,7 +160,6 @@ const ProfilePage = () => {
                 title={audio.title}
                 username={username || ""}
                 audioURL={audio.audio_url}
-                // audioFile is now optional, so we don't need to provide it here
               />
             ))}
           </div>
@@ -161,7 +167,7 @@ const ProfilePage = () => {
           <div className="text-center p-10 bg-muted bg-opacity-20 rounded-lg">
             <p className="text-lightGray mb-4">No audio files shared yet</p>
             <p className="text-sm text-muted-foreground">
-              Why not come and visit for dedicated custom links like https://vzee.fun/@{profile.username}/title
+              Why not come and visit for dedicated custom links like https://vzee.fun/@{profile?.username}/title
             </p>
           </div>
         )}

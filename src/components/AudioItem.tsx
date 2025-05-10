@@ -19,8 +19,8 @@ import {
 interface AudioItemProps {
   title: string;
   username: string;
-  audioFile?: File;  // Make this optional
-  audioURL?: string;
+  audioURL: string;
+  audioFile?: File;  // Make this prop optional
   onDelete?: (title: string) => void;
 }
 

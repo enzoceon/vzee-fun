@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +30,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
       setIsChecking(true);
       
       try {
+        console.log("Checking title availability:", newTitle);
         // Check if title already exists in Supabase
         const { data, error } = await supabase
           .from('audio_uploads')
@@ -38,6 +38,8 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
           .eq('username', username)
           .eq('title', newTitle)
           .maybeSingle();
+          
+        console.log("Title check result:", { data, error });
           
         if (error && error.code !== 'PGRST116') {
           console.error("Error checking title:", error);
@@ -49,21 +51,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
         setTitleAvailable(!data);
       } catch (error) {
         console.error("Error in title check:", error);
-        
-        // Fallback to localStorage check
-        const savedAudios = localStorage.getItem(`${username}_audioFiles`);
-        let isTitleTaken = false;
-        
-        if (savedAudios) {
-          try {
-            const audioFiles = JSON.parse(savedAudios);
-            isTitleTaken = audioFiles.some((audio: any) => audio.title === newTitle);
-          } catch (error) {
-            console.error("Error checking localStorage:", error);
-          }
-        }
-        
-        setTitleAvailable(!isTitleTaken);
+        setTitleAvailable(null);
       } finally {
         setIsChecking(false);
       }
@@ -102,41 +90,29 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     setIsUploading(true);
     
     try {
+      console.log("Starting audio upload process");
       // Create a stable, unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${username}/${title}.${fileExt}`;
+      console.log("Generated filename:", fileName);
       
-      // Use File Reader to get file content as data URL
-      const reader = new FileReader();
+      // Convert file to object URL
+      const audioURL = URL.createObjectURL(file);
+      console.log("Created object URL:", audioURL);
       
-      reader.onload = async (event) => {
-        if (event.target && event.target.result) {
-          const audioURL = URL.createObjectURL(file);
-          
-          // Complete the upload
-          onUploadComplete(title, file, audioURL);
-          setIsUploading(false);
-          onClose();
-          
-          toast.success("Upload successful!");
-        }
-      };
+      // Complete the upload by calling the parent callback
+      onUploadComplete(title, file, audioURL);
+      setIsUploading(false);
+      onClose();
       
-      reader.onerror = (error) => {
-        console.error("FileReader error:", error);
-        toast.error("Upload failed. Please try again.");
-        setIsUploading(false);
-      };
-      
-      // Start reading the file
-      reader.readAsDataURL(file);
-      
+      toast.success("Upload successful!");
     } catch (error) {
       console.error("Upload error:", error);
       setIsUploading(false);
       toast.error("There was an error processing your upload");
     }
   };
+  
   
   return (
     <div 
