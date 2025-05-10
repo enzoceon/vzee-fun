@@ -3,12 +3,14 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { X, FileAudio, CheckCircle, Share } from "lucide-react";
+import { X, FileAudio, CheckCircle, Share, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AudioUploadModalProps {
   username: string;
   onClose: () => void;
-  onUploadComplete: (title: string, file: File) => void;
+  onUploadComplete: (title: string, file: File, audioURL: string) => void;
 }
 
 const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadModalProps) => {
@@ -19,17 +21,36 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
   const [isChecking, setIsChecking] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const { toast: toastHook } = useToast();
   
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleTitleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newTitle = e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, '');
     setTitle(newTitle);
     
     if (newTitle.length >= 3) {
       setIsChecking(true);
       
-      // Check if title is already in use in localStorage
-      setTimeout(() => {
+      try {
+        // Check if title already exists in Supabase
+        const { data, error } = await supabase
+          .from('audio_uploads')
+          .select('title')
+          .eq('username', username)
+          .eq('title', newTitle)
+          .maybeSingle();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error checking title:", error);
+          setTitleAvailable(null);
+          return;
+        }
+        
+        // Title is available if no data was returned
+        setTitleAvailable(!data);
+      } catch (error) {
+        console.error("Error in title check:", error);
+        
+        // Fallback to localStorage check
         const savedAudios = localStorage.getItem(`${username}_audioFiles`);
         let isTitleTaken = false;
         
@@ -38,13 +59,14 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
             const audioFiles = JSON.parse(savedAudios);
             isTitleTaken = audioFiles.some((audio: any) => audio.title === newTitle);
           } catch (error) {
-            console.error("Error checking title availability:", error);
+            console.error("Error checking localStorage:", error);
           }
         }
         
         setTitleAvailable(!isTitleTaken);
+      } finally {
         setIsChecking(false);
-      }, 600);
+      }
     } else {
       setTitleAvailable(null);
     }
@@ -54,22 +76,14 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       if (!selectedFile.type.startsWith("audio/")) {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an audio file",
-          variant: "destructive",
-        });
+        toast.error("Please select an audio file");
         return;
       }
       
       // Check file size (10MB limit)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (selectedFile.size > maxSize) {
-        toast({
-          title: "File too large",
-          description: "Maximum file size is 10MB",
-          variant: "destructive",
-        });
+        toast.error("Maximum file size is 10MB");
         return;
       }
       
@@ -81,33 +95,46 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
     e.preventDefault();
     
     if (!file || !title || title.length < 3 || !titleAvailable) {
-      toast({
-        title: "Invalid submission",
-        description: "Please provide a valid title and audio file",
-        variant: "destructive",
-      });
+      toast.error("Please provide a valid title and audio file");
       return;
     }
     
     setIsUploading(true);
     
     try {
-      // Process the upload
-      onUploadComplete(title, file);
-      setIsUploading(false);
-      onClose();
-      toast({
-        title: "Upload successful",
-        description: `Your audio "${title}" has been uploaded and is ready to share`,
-      });
+      // Create a stable, unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${username}/${title}.${fileExt}`;
+      
+      // Use File Reader to get file content as data URL
+      const reader = new FileReader();
+      
+      reader.onload = async (event) => {
+        if (event.target && event.target.result) {
+          const audioURL = URL.createObjectURL(file);
+          
+          // Complete the upload
+          onUploadComplete(title, file, audioURL);
+          setIsUploading(false);
+          onClose();
+          
+          toast.success("Upload successful!");
+        }
+      };
+      
+      reader.onerror = (error) => {
+        console.error("FileReader error:", error);
+        toast.error("Upload failed. Please try again.");
+        setIsUploading(false);
+      };
+      
+      // Start reading the file
+      reader.readAsDataURL(file);
+      
     } catch (error) {
       console.error("Upload error:", error);
       setIsUploading(false);
-      toast({
-        title: "Upload failed",
-        description: "There was an error processing your upload. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("There was an error processing your upload");
     }
   };
   
@@ -194,7 +221,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
                 {title.length >= 3 && (
                   <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                     {isChecking ? (
-                      <div className="w-4 h-4 border-2 border-zinc-500 border-t-transparent rounded-full animate-spin"></div>
+                      <Loader2 className="w-4 h-4 text-zinc-500 animate-spin" />
                     ) : titleAvailable ? (
                       <CheckCircle className="w-4 h-4 text-green-500" />
                     ) : titleAvailable === false ? (
@@ -226,7 +253,7 @@ const AudioUploadModal = ({ username, onClose, onUploadComplete }: AudioUploadMo
               disabled={isUploading || !file || !title || title.length < 3 || titleAvailable === false}
             >
               {isUploading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 "Publish"
               )}

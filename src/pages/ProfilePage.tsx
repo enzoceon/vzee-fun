@@ -6,6 +6,7 @@ import { ArrowLeft, User } from "lucide-react";
 import AudioItem from "@/components/AudioItem";
 import Loading from "@/components/Loading";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface UserProfile {
   username: string;
@@ -17,9 +18,6 @@ interface AudioFile {
   id: string;
   title: string;
   audio_url: string;
-  file?: File;
-  audioURL?: string;
-  createdAt?: number;
   created_at?: string;
 }
 
@@ -31,7 +29,7 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
   const navigate = useNavigate();
-
+  
   useEffect(() => {
     // Update document title
     document.title = username ? `@${username} - vzee.fun` : "Profile - vzee.fun";
@@ -45,7 +43,7 @@ const ProfilePage = () => {
       try {
         setIsLoading(true);
         
-        // Try to fetch user profile from Supabase
+        // Fetch user profile from Supabase
         const { data: profileData, error: profileError } = await supabase
           .from('user_profiles')
           .select('*')
@@ -53,58 +51,20 @@ const ProfilePage = () => {
           .single();
         
         if (profileError) {
-          // If not found in Supabase, try to get from localStorage as fallback
-          console.log("Profile not found in Supabase, trying localStorage");
-          
-          const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
-          const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
-          
-          let userEmail = null;
-          for (const [email, mappedUsername] of Object.entries(usernameMappings)) {
-            if (mappedUsername === username) {
-              userEmail = email;
-              break;
-            }
-          }
-          
-          let userProfile: UserProfile | null = userEmail && allUsers[userEmail] 
-            ? { 
-                username, 
-                display_name: allUsers[userEmail].name,
-                picture_url: allUsers[userEmail].picture
-              }
-            : null;
-            
-          if (userProfile) {
-            setProfile(userProfile);
-            
-            // If we found a profile in localStorage but not in Supabase,
-            // try to create it in Supabase for future use
-            if (userProfile.display_name) {
-              await supabase
-                .from('user_profiles')
-                .insert({ 
-                  username: username,
-                  display_name: userProfile.display_name, 
-                  picture_url: userProfile.picture_url 
-                })
-                .then(({ error }) => {
-                  if (error) console.error("Error saving profile to Supabase:", error);
-                });
-            }
-          } else {
-            setProfile(null);
-          }
-        } else {
-          // Profile found in Supabase
-          setProfile({
-            username: profileData.username,
-            display_name: profileData.display_name,
-            picture_url: profileData.picture_url
-          });
+          console.error("Profile fetch error:", profileError);
+          setProfile(null);
+          setIsLoading(false);
+          return;
         }
         
-        // Try to fetch audio files from Supabase
+        // Profile found in Supabase
+        setProfile({
+          username: profileData.username,
+          display_name: profileData.display_name,
+          picture_url: profileData.picture_url
+        });
+        
+        // Fetch audio files from Supabase
         const { data: audioData, error: audioError } = await supabase
           .from('audio_uploads')
           .select('*')
@@ -113,46 +73,15 @@ const ProfilePage = () => {
         
         if (audioError) {
           console.error("Error fetching audio files:", audioError);
-          
-          // Fallback to localStorage
-          const storedAudios = localStorage.getItem(`${username}_audioFiles`);
-          if (storedAudios) {
-            const localAudioFiles = JSON.parse(storedAudios);
-            setAudioFiles(localAudioFiles);
-            
-            // Try to save these to Supabase for future use
-            for (const audio of localAudioFiles) {
-              await supabase
-                .from('audio_uploads')
-                .insert({
-                  username: username,
-                  title: audio.title,
-                  audio_url: audio.audioURL || ''
-                })
-                .then(({ error }) => {
-                  if (error) console.error("Error saving audio to Supabase:", error);
-                });
-            }
-          } else {
-            setAudioFiles([]);
-          }
+          setAudioFiles([]);
         } else {
-          // Convert Supabase audio data to our format
-          const formattedAudioFiles = audioData.map(audio => ({
-            id: audio.id,
-            title: audio.title,
-            audio_url: audio.audio_url,
-            audioURL: audio.audio_url,
-            file: new File([], audio.title), // Just a placeholder
-            createdAt: new Date(audio.created_at).getTime()
-          }));
-          
-          setAudioFiles(formattedAudioFiles);
+          setAudioFiles(audioData || []);
         }
         
-        setIsLoading(false);
       } catch (error) {
         console.error("Error loading profile:", error);
+        toast.error("Failed to load user profile");
+      } finally {
         setIsLoading(false);
       }
     };
@@ -218,13 +147,12 @@ const ProfilePage = () => {
         
         {audioFiles.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {audioFiles.map((audio, index) => (
+            {audioFiles.map((audio) => (
               <AudioItem
-                key={audio.id || index}
+                key={audio.id}
                 title={audio.title}
                 username={username || ""}
-                audioFile={audio.file || new File([], audio.title)}
-                audioURL={audio.audioURL || audio.audio_url}
+                audioURL={audio.audio_url}
               />
             ))}
           </div>
