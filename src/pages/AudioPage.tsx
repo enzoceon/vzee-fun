@@ -35,7 +35,7 @@ const AudioPage = () => {
           .select('*')
           .eq('username', username)
           .eq('title', title)
-          .single();
+          .maybeSingle();
         
         if (error) {
           console.error("Error fetching audio:", error);
@@ -45,6 +45,9 @@ const AudioPage = () => {
             title: data.title,
             audio_url: data.audio_url
           });
+          
+          // Update document title
+          document.title = `${data.title} by @${username} - vzee.fun`;
         } else {
           setNotFound(true);
         }

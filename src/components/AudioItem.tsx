@@ -19,7 +19,7 @@ import {
 interface AudioItemProps {
   title: string;
   username: string;
-  audioFile: File;
+  audioFile?: File;  // Make this optional
   audioURL?: string;
   onDelete?: (title: string) => void;
 }
@@ -50,7 +50,7 @@ const AudioItem = ({
 
   useEffect(() => {
     // Create URL from file if not provided or if URL is broken
-    if (!audioURL || (audioElement && audioElement.error)) {
+    if (audioFile && (!audioURL || (audioElement && audioElement.error))) {
       try {
         const url = URL.createObjectURL(audioFile);
         setAudioURL(url);
@@ -76,7 +76,7 @@ const AudioItem = ({
   };
   
   const handlePlayPause = () => {
-    if (!audioURL) {
+    if (!audioURL && audioFile) {
       // Create URL from file if not provided
       const url = URL.createObjectURL(audioFile);
       setAudioURL(url);
@@ -88,26 +88,37 @@ const AudioItem = ({
       setAudioElement(audio);
       audio.play();
       setIsPlaying(true);
-    } else {
+    } else if (audioURL) {
       if (audioElement) {
         if (isPlaying) {
           audioElement.pause();
         } else {
           audioElement.play().catch(err => {
             console.error("Error playing audio:", err);
-            // Try recreating the audio URL
-            const newUrl = URL.createObjectURL(audioFile);
-            const newAudio = new Audio(newUrl);
-            newAudio.addEventListener("ended", () => {
-              setIsPlaying(false);
-            });
-            setAudioURL(newUrl);
-            setAudioElement(newAudio);
-            newAudio.play().then(() => {
-              setIsPlaying(true);
-            }).catch(err2 => {
-              console.error("Failed to play with recreated URL:", err2);
-            });
+            // For files from storage, we might not be able to recreate the URL
+            // So just create a new audio element
+            if (audioFile) {
+              const newUrl = URL.createObjectURL(audioFile);
+              const newAudio = new Audio(newUrl);
+              newAudio.addEventListener("ended", () => {
+                setIsPlaying(false);
+              });
+              setAudioURL(newUrl);
+              setAudioElement(newAudio);
+              newAudio.play().then(() => {
+                setIsPlaying(true);
+              }).catch(err2 => {
+                console.error("Failed to play with recreated URL:", err2);
+              });
+            } else {
+              // If we only have the URL but no file, just try playing with a new element
+              const newAudio = new Audio(audioURL);
+              newAudio.addEventListener("ended", () => {
+                setIsPlaying(false);
+              });
+              setAudioElement(newAudio);
+              newAudio.play().catch(e => console.error("Still can't play:", e));
+            }
           });
         }
         setIsPlaying(!isPlaying);
@@ -118,12 +129,15 @@ const AudioItem = ({
           setIsPlaying(false);
         });
         audio.addEventListener("error", () => {
-          // Handle audio error by recreating URL
-          const newUrl = URL.createObjectURL(audioFile);
-          audio.src = newUrl;
-          setAudioURL(newUrl);
-          audio.load();
-          audio.play().catch(err => console.error("Error playing recreated audio:", err));
+          console.error("Audio error occurred");
+          // If we have the file, recreate the URL
+          if (audioFile) {
+            const newUrl = URL.createObjectURL(audioFile);
+            audio.src = newUrl;
+            setAudioURL(newUrl);
+            audio.load();
+            audio.play().catch(err => console.error("Error playing recreated audio:", err));
+          }
         });
         setAudioElement(audio);
         audio.play().then(() => {

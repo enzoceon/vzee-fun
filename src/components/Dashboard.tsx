@@ -209,6 +209,7 @@ const Dashboard = ({ username }: DashboardProps) => {
                 title={audio.title}
                 username={username}
                 audioURL={audio.audio_url || audio.audioURL || ""}
+                audioFile={audio.file} // Pass the file if available
                 onDelete={handleDeleteAudio}
               />
             ))}

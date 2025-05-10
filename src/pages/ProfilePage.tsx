@@ -153,6 +153,7 @@ const ProfilePage = () => {
                 title={audio.title}
                 username={username || ""}
                 audioURL={audio.audio_url}
+                // audioFile is now optional, so we don't need to provide it here
               />
             ))}
           </div>
