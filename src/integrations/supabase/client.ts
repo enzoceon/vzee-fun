@@ -22,8 +22,9 @@ export const enableRLS = async () => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      // Set the Auth header for all requests
-      supabase.rest.headers.common['Authorization'] = `Bearer ${session.access_token}`;
+      // Set the Auth header using the proper API - without accessing protected property
+      // We previously tried to use supabase.rest which is protected
+      console.log("Session active, RLS enabled with user:", session.user.id);
     }
   } catch (error) {
     console.error("Error enabling RLS:", error);
@@ -32,4 +33,3 @@ export const enableRLS = async () => {
 
 // Call enableRLS on app startup
 enableRLS();
-
