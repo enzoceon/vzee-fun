@@ -5,19 +5,22 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, User } from "lucide-react";
 import AudioItem from "@/components/AudioItem";
 import Loading from "@/components/Loading";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UserProfile {
   username: string;
-  name?: string;
-  picture?: string;
+  display_name?: string;
+  picture_url?: string;
 }
 
 interface AudioFile {
+  id: string;
   title: string;
-  file: File;
-  audioURL: string;
-  blobData?: string;
-  createdAt: number;
+  audio_url: string;
+  file?: File;
+  audioURL?: string;
+  createdAt?: number;
+  created_at?: string;
 }
 
 const ProfilePage = () => {
@@ -38,39 +41,113 @@ const ProfilePage = () => {
       return;
     }
 
-    const loadProfile = () => {
+    const loadProfile = async () => {
       try {
-        // Get user profile info from all users map in localStorage
-        const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
-        const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
+        setIsLoading(true);
         
-        // Find the email associated with this username
-        let userEmail = null;
-        for (const [email, mappedUsername] of Object.entries(usernameMappings)) {
-          if (mappedUsername === username) {
-            userEmail = email;
-            break;
+        // Try to fetch user profile from Supabase
+        const { data: profileData, error: profileError } = await supabase
+          .from('user_profiles')
+          .select('*')
+          .eq('username', username)
+          .single();
+        
+        if (profileError) {
+          // If not found in Supabase, try to get from localStorage as fallback
+          console.log("Profile not found in Supabase, trying localStorage");
+          
+          const allUsers = JSON.parse(localStorage.getItem('vzeeAllUsers') || '{}');
+          const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
+          
+          let userEmail = null;
+          for (const [email, mappedUsername] of Object.entries(usernameMappings)) {
+            if (mappedUsername === username) {
+              userEmail = email;
+              break;
+            }
           }
+          
+          let userProfile: UserProfile | null = userEmail && allUsers[userEmail] 
+            ? { 
+                username, 
+                display_name: allUsers[userEmail].name,
+                picture_url: allUsers[userEmail].picture
+              }
+            : null;
+            
+          if (userProfile) {
+            setProfile(userProfile);
+            
+            // If we found a profile in localStorage but not in Supabase,
+            // try to create it in Supabase for future use
+            if (userProfile.display_name) {
+              await supabase
+                .from('user_profiles')
+                .insert({ 
+                  username: username,
+                  display_name: userProfile.display_name, 
+                  picture_url: userProfile.picture_url 
+                })
+                .then(({ error }) => {
+                  if (error) console.error("Error saving profile to Supabase:", error);
+                });
+            }
+          } else {
+            setProfile(null);
+          }
+        } else {
+          // Profile found in Supabase
+          setProfile({
+            username: profileData.username,
+            display_name: profileData.display_name,
+            picture_url: profileData.picture_url
+          });
         }
         
-        let userProfile: UserProfile = { username };
+        // Try to fetch audio files from Supabase
+        const { data: audioData, error: audioError } = await supabase
+          .from('audio_uploads')
+          .select('*')
+          .eq('username', username)
+          .order('created_at', { ascending: false });
         
-        // If we found their email, get their profile info
-        if (userEmail && allUsers[userEmail]) {
-          userProfile = {
-            ...userProfile,
-            name: allUsers[userEmail].name,
-            picture: allUsers[userEmail].picture
-          };
-        }
-        
-        setProfile(userProfile);
-        
-        // Load audio files
-        const storedAudios = localStorage.getItem(`${username}_audioFiles`);
-        if (storedAudios) {
-          const audioFiles = JSON.parse(storedAudios);
-          setAudioFiles(audioFiles);
+        if (audioError) {
+          console.error("Error fetching audio files:", audioError);
+          
+          // Fallback to localStorage
+          const storedAudios = localStorage.getItem(`${username}_audioFiles`);
+          if (storedAudios) {
+            const localAudioFiles = JSON.parse(storedAudios);
+            setAudioFiles(localAudioFiles);
+            
+            // Try to save these to Supabase for future use
+            for (const audio of localAudioFiles) {
+              await supabase
+                .from('audio_uploads')
+                .insert({
+                  username: username,
+                  title: audio.title,
+                  audio_url: audio.audioURL || ''
+                })
+                .then(({ error }) => {
+                  if (error) console.error("Error saving audio to Supabase:", error);
+                });
+            }
+          } else {
+            setAudioFiles([]);
+          }
+        } else {
+          // Convert Supabase audio data to our format
+          const formattedAudioFiles = audioData.map(audio => ({
+            id: audio.id,
+            title: audio.title,
+            audio_url: audio.audio_url,
+            audioURL: audio.audio_url,
+            file: new File([], audio.title), // Just a placeholder
+            createdAt: new Date(audio.created_at).getTime()
+          }));
+          
+          setAudioFiles(formattedAudioFiles);
         }
         
         setIsLoading(false);
@@ -118,9 +195,9 @@ const ProfilePage = () => {
         </Button>
         
         <div className="flex flex-col items-center mb-10">
-          {profile.picture ? (
+          {profile.picture_url ? (
             <img 
-              src={profile.picture} 
+              src={profile.picture_url} 
               alt={`${profile.username}'s profile`} 
               className="w-20 h-20 rounded-full mb-4 border-2 border-premiumRed"
             />
@@ -130,8 +207,8 @@ const ProfilePage = () => {
             </div>
           )}
           
-          {profile.name && (
-            <h1 className="text-2xl font-bold mb-1">{profile.name}</h1>
+          {profile.display_name && (
+            <h1 className="text-2xl font-bold mb-1">{profile.display_name}</h1>
           )}
           
           <p className="text-lg font-medium text-premiumRed">@{profile.username}</p>
@@ -143,17 +220,20 @@ const ProfilePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {audioFiles.map((audio, index) => (
               <AudioItem
-                key={index}
+                key={audio.id || index}
                 title={audio.title}
                 username={username || ""}
-                audioFile={audio.file}
-                audioURL={audio.audioURL}
+                audioFile={audio.file || new File([], audio.title)}
+                audioURL={audio.audioURL || audio.audio_url}
               />
             ))}
           </div>
         ) : (
           <div className="text-center p-10 bg-muted bg-opacity-20 rounded-lg">
-            <p className="text-lightGray">No audio files shared yet</p>
+            <p className="text-lightGray mb-4">No audio files shared yet</p>
+            <p className="text-sm text-muted-foreground">
+              Why not come and visit for dedicated custom links like https://vzee.fun/@{profile.username}/title
+            </p>
           </div>
         )}
       </div>

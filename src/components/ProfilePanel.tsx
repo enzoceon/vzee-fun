@@ -5,6 +5,7 @@ import { X, User, LogOut, Check, HeartHandshake, UserCheck, AlertTriangle, Loade
 import { useToast } from "@/hooks/use-toast";
 import { signOut, getCurrentUser } from "@/lib/googleAuth";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProfilePanelProps {
   username: string;
@@ -45,13 +46,34 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     if (isChangingUsername && newUsername !== username && newUsername.length >= 3) {
       const checkTimeout = setTimeout(() => {
         setIsChecking(true);
-        // Check against all usernames in localStorage
-        setTimeout(() => {
-          const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
-          const isTaken = allUsernames.includes(newUsername) && newUsername !== username;
-          setIsAvailable(!isTaken);
-          setIsChecking(false);
-        }, 600);
+        // Check against Supabase if username exists
+        const checkUsername = async () => {
+          try {
+            const { data, error: supabaseError } = await supabase
+              .from('user_profiles')
+              .select('username')
+              .eq('username', newUsername)
+              .single();
+              
+            if (supabaseError && supabaseError.code === 'PGRST116') {
+              // Username is available (no record found)
+              setIsAvailable(true);
+            } else {
+              // Username is taken
+              setIsAvailable(false);
+            }
+          } catch (error) {
+            console.error("Error checking username:", error);
+            // Fallback to localStorage check
+            const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
+            const isTaken = allUsernames.includes(newUsername) && newUsername !== username;
+            setIsAvailable(!isTaken);
+          } finally {
+            setIsChecking(false);
+          }
+        };
+        
+        checkUsername();
       }, 300);
       
       return () => clearTimeout(checkTimeout);
@@ -142,7 +164,7 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setError(validationError);
   };
   
-  const saveUsername = () => {
+  const saveUsername = async () => {
     const validationError = validateUsername(newUsername);
     if (validationError) {
       setError(validationError);
@@ -152,51 +174,86 @@ const ProfilePanel = ({ username: initialUsername, onClose, ...props }: ProfileP
     setIsSubmitting(true);
     setError(null);
     
-    // First check if username is taken globally (but not by this user)
-    const allUsernames = JSON.parse(localStorage.getItem('vzeeAllUsernames') || '[]');
-    const isTakenGlobally = allUsernames.includes(newUsername) && newUsername !== username;
-    
-    if (isTakenGlobally) {
-      setError("This username is already taken");
+    try {
+      // Save to Supabase first
+      const user = getCurrentUser();
+      if (!user?.email) {
+        throw new Error("User email not found");
+      }
+      
+      // Check if a profile already exists for this user or username
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
+        
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Error checking existing profile:", checkError);
+        throw new Error("Failed to check existing profile");
+      }
+      
+      if (existingProfile) {
+        // Update existing profile
+        const { error: updateError } = await supabase
+          .from('user_profiles')
+          .update({ 
+            username: newUsername,
+            display_name: user.name,
+            picture_url: user.picture
+          })
+          .eq('username', username);
+          
+        if (updateError) {
+          console.error("Error updating profile:", updateError);
+          throw new Error("Failed to update profile");
+        }
+      } else {
+        // Insert new profile
+        const { error: insertError } = await supabase
+          .from('user_profiles')
+          .insert({ 
+            username: newUsername,
+            display_name: user.name,
+            picture_url: user.picture
+          });
+          
+        if (insertError) {
+          console.error("Error creating profile:", insertError);
+          throw new Error("Failed to create profile");
+        }
+      }
+      
+      // Update username in local storage for legacy support
+      setUsername(newUsername);
+      localStorage.setItem('vzeeUsername', newUsername);
+      
+      // Update username in the email-username mapping
+      if (user?.email) {
+        const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
+        usernameMappings[user.email] = newUsername;
+        localStorage.setItem('vzeeUsernameMap', JSON.stringify(usernameMappings));
+      }
+      
+      // Rename user's audio files in localStorage if they exist
+      const oldAudioFiles = localStorage.getItem(`${username}_audioFiles`);
+      if (oldAudioFiles) {
+        localStorage.setItem(`${newUsername}_audioFiles`, oldAudioFiles);
+        localStorage.removeItem(`${username}_audioFiles`);
+      }
+      
+      toast({
+        title: "Username updated",
+        description: "Your username has been updated successfully!",
+      });
+      
+      setIsChangingUsername(false);
+    } catch (error) {
+      console.error("Error saving username:", error);
+      setError("Failed to save username. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      return;
     }
-    
-    // Update username in the global usernames list
-    if (username !== newUsername) {
-      const updatedUsernames = allUsernames.filter((name: string) => name !== username);
-      updatedUsernames.push(newUsername);
-      localStorage.setItem('vzeeAllUsernames', JSON.stringify(updatedUsernames));
-    }
-    
-    // Update username
-    setUsername(newUsername);
-    
-    // Store to localStorage
-    localStorage.setItem('vzeeUsername', newUsername);
-    
-    // Update username in the email-username mapping
-    const user = getCurrentUser();
-    if (user?.email) {
-      const usernameMappings = JSON.parse(localStorage.getItem('vzeeUsernameMap') || '{}');
-      usernameMappings[user.email] = newUsername;
-      localStorage.setItem('vzeeUsernameMap', JSON.stringify(usernameMappings));
-    }
-    
-    // Rename user's audio files in localStorage if they exist
-    const oldAudioFiles = localStorage.getItem(`${initialUsername}_audioFiles`);
-    if (oldAudioFiles) {
-      localStorage.setItem(`${newUsername}_audioFiles`, oldAudioFiles);
-      localStorage.removeItem(`${initialUsername}_audioFiles`);
-    }
-    
-    setIsChangingUsername(false);
-    setIsSubmitting(false);
-    
-    toast({
-      title: "Username updated",
-      description: "Your username has been updated successfully!",
-    });
   };
 
   const fullProfileUrl = `vzee.fun/@${username}`;

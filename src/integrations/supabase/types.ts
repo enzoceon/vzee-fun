@@ -9,6 +9,62 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      audio_uploads: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          title: string
+          username: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          title: string
+          username: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          title?: string
+          username?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audio_uploads_username_fkey"
+            columns: ["username"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["username"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          picture_url: string | null
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          picture_url?: string | null
+          username: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          picture_url?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
       "vzee.fun": {
         Row: {
           created_at: string
